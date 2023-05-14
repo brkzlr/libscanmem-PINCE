@@ -1,7 +1,4 @@
-# ![](https://raw.githubusercontent.com/scanmem/scanmem/main/gui/GameConqueror_72x72.png)scanmem & GameConqueror
-
-[![Build Status](https://travis-ci.org/scanmem/scanmem.svg?branch=main)](https://travis-ci.org/scanmem/scanmem)
-[![Coverity Status](https://scan.coverity.com/projects/8565/badge.svg?flat=1")](https://scan.coverity.com/projects/scanmem)
+# scanmem-PINCE
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
 variable in an executing process. scanmem simply needs to be told the pid of
@@ -10,29 +7,20 @@ the process and the value of the variable at several different times.
 After several scans of the process, scanmem isolates the position of the
 variable and allows you to modify its value.
 
-## GUI
-
-GameConqueror is a GUI front-end for scanmem, providing more features, such as:
-  * Flexible syntax for searching
-  * Easier and multiple variable locking
-  * Better process finder
-  * Memory browser/editor
-
-See [gui/README.md](gui/README.md) for more details.
+This fork is to add features that are needed by PINCE:
+https://github.com/korcankaraokcu/PINCE
 
 ## Requirements
 
 scanmem requires libreadline to read commands interactively, and `/proc` must be
-mounted. GameConqueror requirements are documented in [gui/README.md](gui/README.md).
+mounted.
 
 ## Documentation
 
 To read documentation:
   * `man scanmem`
-  * `man gameconqueror`
   * `scanmem --help`
   * enter `help` at the scanmem prompt
-  * use the interactive help of GameConqueror
 
 ## Build Requirements
 
@@ -44,17 +32,12 @@ To generate files required for the build:
 
     ./autogen.sh
 
-To build with GUI:
-
-    ./configure --prefix=/usr --enable-gui && make
-    sudo make install
-
-To build without GUI:
+To build:
 
     ./configure --prefix=/usr && make
     sudo make install
 
-scanmem and GameConqueror use static paths to libscanmem. So executing
+scanmem use static paths to libscanmem. So executing
 `ldconfig` is not required. Consider setting `--libdir=/usr/lib/scanmem` or
 `--libdir=/usr/lib64/scanmem` to avoid that libscanmem is in a library
 search path.
