@@ -24,7 +24,7 @@ To read documentation:
 
 ## Build Requirements
 
-The build requires autotools-dev, libtool, libreadline-dev, intltool, and python.
+The build requires autotools-dev, libtool, libreadline-dev and python.
 
 ## Build and Install
 
