@@ -30,12 +30,6 @@ autoconf || {
     echo "autoconf failed"
     exit 1
 }
-echo "+ running intltoolize ..."
-intltoolize -f -c --automake || {
-    echo
-    echo "intltoolize failed - check that it is present on system"
-    exit 1
-}
 echo "+ running automake ... "
 automake -c --add-missing || {
     echo

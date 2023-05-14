@@ -2,13 +2,12 @@ AC_INIT([scanmem],[0.18~dev],[https://github.com/scanmem/scanmem])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror -Wno-extra-portability foreign])
 AC_CONFIG_SRCDIR([main.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_USE_SYSTEM_EXTENSIONS
 AC_HEADER_STDBOOL
 
 LT_INIT
 
-IT_PROG_INTLTOOL
 AM_PROG_CC_C_O
 
 AC_CHECK_FUNCS(getline secure_getenv)
@@ -111,15 +110,9 @@ AS_IF([test "x$with_readline" != "xno"], [
   ])
 ])
 
-GETTEXT_PACKAGE=GameConqueror
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
-                   [The domain to use with gettext])
-
 AC_CONFIG_FILES([
   Makefile
   test/Makefile
-  po/Makefile.in
 ])
 
 
@@ -166,26 +159,5 @@ AC_DEFUN([AS_AC_EXPAND],
   exec_prefix=$exec_prefix_save
 ])
 # end copy
-
-
-# GameConqueror configuration
-
-AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
-                            [enable gameconqueror, the gui front-end of scanmem])])
-AM_CONDITIONAL([ENABLE_GUI], [test "x$enable_gui" = "xyes"])
-AS_IF([test "x$enable_gui" = "xyes"], [
-  AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
-  AS_AC_EXPAND(LOCALEDIR, $localedir)
-  AS_AC_EXPAND(LIBDIR, $libdir)
-
-  AM_PATH_PYTHON([2.7])
-  AC_CONFIG_FILES([
-    gui/Makefile
-    gui/icons/Makefile
-    gui/consts.py
-    gui/gameconqueror
-    gui/org.freedesktop.gameconqueror.policy.in
-  ])
-])
 
 AC_OUTPUT

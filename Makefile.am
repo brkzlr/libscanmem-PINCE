@@ -2,10 +2,6 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = test
 
-if ENABLE_GUI
-  SUBDIRS += po gui
-endif
-
 # '-O2 -g' are added by `configure`, unless the user overrides CFLAGS
 AM_CFLAGS = -std=gnu99 -Wall
 
