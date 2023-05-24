@@ -1799,7 +1799,7 @@ bool handler__redo(globals_t * vars, char **argv, unsigned argc) {
     }
     struct history_entry_t *next = TAILQ_NEXT(vars->current, list);
     if (next == NULL) {
-        show_error("nothing to redo");
+        show_error("nothing to redo\n");
         return false;
     }
     matches_and_old_values_array *tmp = realloc(vars->matches, next->matches->bytes_allocated);
