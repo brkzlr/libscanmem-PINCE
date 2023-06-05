@@ -62,7 +62,6 @@ typedef struct {
     const char *current_cmdline;   /* the command being executed */
     void (*printversion)(FILE *outfd);
     struct {
-        unsigned short undo_limit;
         unsigned short alignment;
         unsigned short debug;
         unsigned short backend;    /* if 1, scanmem will work as a backend and
@@ -101,8 +100,5 @@ bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, 
 bool sm_attach(pid_t target);
 bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len);
 bool sm_write_array(pid_t target, void *addr, const void *data, size_t len);
-
-bool sm_undo_scan(void);
-bool sm_redo_scan(void);
 
 #endif /* SCANMEM_H */

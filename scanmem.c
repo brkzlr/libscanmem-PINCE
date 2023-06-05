@@ -63,7 +63,6 @@ globals_t sm_globals = {
     sm_printversion,            /* printversion() pointer */
     /* options */
     {
-        0,                      /* undo limit */
         1,                      /* alignment */
         0,                      /* debug */
         0,                      /* backend */
@@ -263,10 +262,3 @@ void sm_set_stop_flag(bool stop_flag)
     sm_globals.stop_flag = stop_flag;
 }
 
-bool sm_undo_scan(void) {
-    return true;
-}
-
-bool sm_redo_scan(void) {
-    return true;
-}
