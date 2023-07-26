@@ -26,16 +26,10 @@ import sys
 import tempfile
 
 def decode(raw_bytes, errors='strict'):
-    if PY3K:
-        return raw_bytes.decode(errors=errors)
-    else:
-        return str(raw_bytes)
+    return raw_bytes.decode(errors=errors)
 
 def encode(unicode_string, errors='strict'):
-    if PY3K:
-        return unicode_string.encode(errors=errors)
-    else:
-        return unicode_string
+    return unicode_string.encode(errors=errors)
 
 class Scanmem():
     """Wrapper for libscanmem."""
