@@ -65,7 +65,6 @@ AC_FUNC_REALLOC
 
 AC_CONFIG_FILES([
   Makefile
-  test/Makefile
 ])
 
 
