@@ -37,10 +37,8 @@ class Scanmem():
     LIBRARY_FUNCS = {
         'sm_init' : (ctypes.c_bool, ),
         'sm_cleanup' : (None, ),
-        'sm_set_backend' : (None, ),
         'sm_backend_exec_cmd' : (None, ctypes.c_char_p),
         'sm_get_num_matches' : (ctypes.c_ulong, ),
-        'sm_get_version' : (ctypes.c_char_p, ),
         'sm_get_scan_progress' : (ctypes.c_double, ),
         'sm_set_stop_flag' : (None, ctypes.c_bool),
         'sm_process_is_dead' : (ctypes.c_bool, ctypes.c_int32)
@@ -49,10 +47,8 @@ class Scanmem():
     def __init__(self, libpath='libscanmem.so'):
         self._lib = ctypes.CDLL(libpath)
         self._init_lib_functions()
-        self._lib.sm_set_backend()
         self._lib.sm_init()
         self.send_command('reset')
-        self.version = decode(self._lib.sm_get_version())
 
     def _init_lib_functions(self):
         for k,v in Scanmem.LIBRARY_FUNCS.items():

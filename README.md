@@ -1,4 +1,4 @@
-# scanmem-PINCE
+# libscanmem-PINCE
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
 variable in an executing process. scanmem simply needs to be told the pid of
@@ -7,24 +7,20 @@ the process and the value of the variable at several different times.
 After several scans of the process, scanmem isolates the position of the
 variable and allows you to modify its value.
 
-This fork is to add features that are needed by PINCE:
+This fork is to strip anything that's not libscanmem and add features that are needed by PINCE:
 https://github.com/korcankaraokcu/PINCE
 
 ## Requirements
 
-scanmem requires libreadline to read commands interactively, and `/proc` must be
-mounted.
+scanmem requires `/proc` to be mounted.
 
 ## Documentation
 
-To read documentation:
-  * `man scanmem`
-  * `scanmem --help`
-  * enter `help` at the scanmem prompt
+Code is documentation. This fork is only to be used for developing PINCE.
 
 ## Build Requirements
 
-The build requires autotools-dev, libtool, libreadline-dev and python.
+The build requires autotools-dev, libtool and python.
 
 ## Build and Install
 
@@ -34,25 +30,10 @@ To generate files required for the build:
 
 To build:
 
-    ./configure --prefix=/usr && make
-    sudo make install
-
-scanmem use static paths to libscanmem. So executing
-`ldconfig` is not required. Consider setting `--libdir=/usr/lib/scanmem` or
-`--libdir=/usr/lib64/scanmem` to avoid that libscanmem is in a library
-search path.
+    ./configure && make
 
 Run `./configure --help` for more details.
 
-## Android Build
+## Licence: 
 
-You need a
-[standalone toolchain of Android NDK](https://developer.android.com/ndk/guides/standalone_toolchain.html#itc)
-(Advanced method) to build interactive capabilities for Android.
-For more information, run:
-
-    ./build_for_android.sh help
-
-## License: 
-
-GPLv3, LGPLv3 for libscanmem
+LGPLv3 for libscanmem

@@ -1,7 +1,6 @@
-AC_INIT([scanmem],[0.18~dev],[https://github.com/scanmem/scanmem])
+AC_INIT([scanmem],[0.20~dev],[https://github.com/brkzlr/scanmem-PINCE])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror -Wno-extra-portability foreign])
-AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 AC_USE_SYSTEM_EXTENSIONS
 AC_HEADER_STDBOOL
@@ -11,16 +10,9 @@ LT_INIT
 AM_PROG_CC_C_O
 
 AC_CHECK_FUNCS(getline secure_getenv)
-
 if test "x$ac_cv_func_getline" = "xno"; then
-  AC_CHECK_FUNCS(fgetln)
-  if test "x$ac_cv_func_fgetln" = "xno"; then
-    AC_MSG_ERROR([Cannot build without working getline().])
-  else
-    AC_MSG_NOTICE([Using the fgetln()-based getline() replacement.])
-  fi
+	AC_MSG_ERROR([Cannot build without working getline().])
 fi
-AM_CONDITIONAL([HAVE_GETLINE], [test "x$ac_cv_func_getline" != "xno"])
 
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/ioctl.h sys/time.h)
 
@@ -43,13 +35,8 @@ AC_TYPE_SSIZE_T
 AC_C_BIGENDIAN
 
 # Detect the host OS
-android="no"
 AC_CANONICAL_HOST
 case "$host_os" in
-  *android*)
-    android="yes"
-    AC_MSG_NOTICE([Android detected])
-    ;;
   linux*)
     AC_MSG_NOTICE([Linux detected])
     ;;
@@ -58,57 +45,23 @@ case "$host_os" in
     ;;
 esac
 
-# Allows disabling procmem support
-AC_ARG_ENABLE(procmem, [AS_HELP_STRING([--disable-procmem],
-                         [forcefully disable proc/pid/mem support])])
-AS_IF([test "x$enable_procmem" = "xno"], [
-  AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
-])
+# also need to check if the file is zero'ed (some hardened systems)
+AC_CHECK_FILE([/proc/self/maps], [], [
+	  echo "This system does not seem to have /proc/pid/maps files."
+	  exit 1
+	  ])
 
-AS_IF([test "x$android" = "xno"], [
-  AS_IF([test "x$enable_procmem" != "xno"], [
-    # also need to check if the file is zero'ed (some hardened systems)
-    AC_CHECK_FILE([/proc/self/maps], [], [
-      echo "This system does not seem to have /proc/pid/maps files."
-      exit 1
-    ])
-
-    # also need to check this file works
-    AC_CHECK_FILE([/proc/self/mem], [
-      # LARGEFILE support required for this to work
-      AC_SYS_LARGEFILE
-      AC_DEFINE(HAVE_PROCMEM, [1], [Enable /proc/pid/mem support])
-    ],[
-      # This will hurt performance.
-      echo "This system does not seem to have /proc/pid/mem files."
-      echo "Falling back to ptrace() only support."
-      AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
-    ])
-  ])
-    # malloc optimizations without Android
-    AC_FUNC_MALLOC
-    AC_FUNC_REALLOC
-], [
-  # supported on Android
-  AC_SYS_LARGEFILE
-  # /proc/pid/mem is there but reading interesting data fails
-  AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
-])
-
-
-# Check for termcap and readline or bypass checking for the libraries.
-AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
-                            [build without readline])])
-AM_CONDITIONAL([WITH_READLINE], [test "x$with_readline" != "xno"])
-AS_IF([test "x$with_readline" != "xno"], [
-  # termcap is sometimes required by readline
-  AC_CHECK_LIB([termcap], [tgetent], [], [])
-  AC_CHECK_LIB([readline], [readline], [], [
-    echo "libreadline could not be found, which is required to continue."
-    echo "The libreadline-dev package may be required."
-    exit 1
-  ])
-])
+# also need to check this file works
+AC_CHECK_FILE([/proc/self/mem], [
+	  # LARGEFILE support required for this to work
+	  AC_SYS_LARGEFILE
+	  ],[
+		 # This will hurt performance.
+		 echo "This system does not seem to have /proc/pid/mem files."
+		 exit 1
+		 ])
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
 
 AC_CONFIG_FILES([
   Makefile
