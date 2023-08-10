@@ -75,12 +75,19 @@ typedef struct {
 /* global settings */
 extern globals_t sm_globals;
 
+/* scanmem general */
 bool sm_init(void);
 void sm_cleanup(void);
 void sm_backend_exec_cmd(const char *commandline);
 unsigned long sm_get_num_matches(void);
 double sm_get_scan_progress(void);
 void sm_set_stop_flag(bool stop_flag);
+
+/* scanmem commands */
+bool sm_cmd_pid(unsigned long int pid);
+bool sm_cmd_reset(void);
+bool sm_cmd_undo(void);
+bool sm_cmd_redo(void);
 
 /* procmem.c */
 bool sm_attach(pid_t target);

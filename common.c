@@ -41,8 +41,7 @@ enum pstate {
  * Requirements: Linux kernel, mounted /proc
  * Assumption: (pid > 0)  --> Please check your PID before!
  */
-static enum pstate check_process(pid_t pid)
-{
+static enum pstate check_process(pid_t pid){
 	FILE *fp = NULL;
 	char *line = NULL;
 	size_t alloc_len = 0;
@@ -88,7 +87,7 @@ err:
 	return PROC_ERR;
 }
 
-bool sm_process_is_dead(pid_t pid)
-{
+bool sm_process_is_dead(pid_t pid){
 	return (check_process(pid) != PROC_RUNNING);
 }
+

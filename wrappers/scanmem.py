@@ -35,26 +35,39 @@ class Scanmem():
     """Wrapper for libscanmem."""
 
     LIBRARY_FUNCS = {
+        # General functions
         'sm_init' : (ctypes.c_bool, ),
         'sm_cleanup' : (None, ),
         'sm_backend_exec_cmd' : (None, ctypes.c_char_p),
         'sm_get_num_matches' : (ctypes.c_ulong, ),
         'sm_get_scan_progress' : (ctypes.c_double, ),
         'sm_set_stop_flag' : (None, ctypes.c_bool),
-        'sm_process_is_dead' : (ctypes.c_bool, ctypes.c_int32)
-    }
+        'sm_process_is_dead' : (ctypes.c_bool, ctypes.c_int32),
 
-    def __init__(self, libpath='libscanmem.so'):
-        self._lib = ctypes.CDLL(libpath)
-        self._init_lib_functions()
-        self._lib.sm_init()
-        self.send_command('reset')
+        # Commands
+        'sm_cmd_pid': (ctypes.c_bool, ctypes.c_uint32),
+        'sm_cmd_reset': (ctypes.c_bool, ),
+        'sm_cmd_undo' : (ctypes.c_bool, ),
+        'sm_cmd_redo' : (ctypes.c_bool, )
+    }
 
     def _init_lib_functions(self):
         for k,v in Scanmem.LIBRARY_FUNCS.items():
             f = getattr(self._lib, k)
             f.restype = v[0]
             f.argtypes = v[1:]
+
+    def __init__(self, libpath='libscanmem.so'):
+        self._lib = ctypes.CDLL(libpath)
+        self._init_lib_functions()
+        self._lib.sm_init()
+        self._lib.sm_cmd_reset()
+
+    def exit_cleanup(self):
+        """
+        Frees resources allocated by libscanmem, should be called before disposing of this instance
+        """
+        self._lib.sm_cleanup()
 
     def send_command(self, cmd, get_output = False):
         """
@@ -90,14 +103,20 @@ class Scanmem():
         """
         self._lib.sm_set_stop_flag(stop_flag)
 
-    def exit_cleanup(self):
-        """
-        Frees resources allocated by libscanmem, should be called before disposing of this instance
-        """
-        self._lib.sm_cleanup()
-
     def process_is_dead(self, pid):
         return self._lib.sm_process_is_dead(pid)
+
+    def pid(self, pid = 0):
+        return self._lib.sm_cmd_pid(pid)
+
+    def reset(self):
+        return self._lib.sm_cmd_reset()
+
+    def undo_scan(self):
+        return self._lib.sm_cmd_undo()
+
+    def redo_scan(self):
+        return self._lib.sm_cmd_redo()
 
     def matches(self):
         """

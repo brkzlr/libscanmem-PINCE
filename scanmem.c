@@ -66,8 +66,7 @@ globals_t sm_globals = {
 };
 
 /* signal handler - use async-signal safe functions ONLY! */
-static void sighandler(int n)
-{
+static void sighandler(int n){
 	const char err_msg[] = "error: \nKilled by signal ";
 	const char msg_end[] = ".\n";
 	char num_str[4] = {0};
@@ -81,9 +80,11 @@ static void sighandler(int n)
 	if (n < 10) {
 		num_str[0] = (char) (0x30 + n);
 		num_size = 1;
-	} else if (n >= 100) {
+	}
+	else if (n >= 100) {
 		goto out;
-	} else {
+	}
+	else {
 		num_str[0] = (char) (0x30 + n / 10);
 		num_str[1] = (char) (0x30 + n % 10);
 		num_size = 2;
@@ -98,14 +99,12 @@ out:
 	_exit(EXIT_FAILURE);   /* also detaches from tracee */
 }
 
-
-bool sm_init(void)
-{
+/* scanmem general */
+bool sm_init(void){
 	globals_t *vars = &sm_globals;
 	TAILQ_INIT(&vars->match_history);
 	/* before attaching to target, install signal handler to detach on error */
-	if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
-	{
+	if (vars->options.debug == 0){ /* in debug mode, let it crash and see the core dump */
 		(void) signal(SIGHUP, sighandler);
 		(void) signal(SIGINT, sighandler);
 		(void) signal(SIGSEGV, sighandler);
@@ -128,10 +127,6 @@ bool sm_init(void)
 			LIST_LONGDOC, NULL);
 	sm_registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
 			DELETE_LONGDOC, NULL);
-	sm_registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
-			RESET_LONGDOC, NULL);
-	sm_registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
-			PID_LONGDOC, NULL);
 	sm_registercommand("snapshot", handler__snapshot, vars->commands,
 			SNAPSHOT_SHRTDOC, SNAPSHOT_LONGDOC, NULL);
 	sm_registercommand("dregion", handler__dregion, vars->commands,
@@ -174,10 +169,6 @@ bool sm_init(void)
 			WRITE_LONGDOC, WRITE_COMPLETE);
 	sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC,
 			OPTION_LONGDOC, OPTION_COMPLETE);
-	sm_registercommand("undo", handler__undo, vars->commands, 
-			UNDO_SHORTDOC, UNDO_LONGDOC, UNDO_COMPLETE);
-	sm_registercommand("redo", handler__redo, vars->commands, 
-			REDO_SHORTDOC, REDO_LONGDOC, REDO_COMPLETE);
 	/* commands beginning with __ have special meaning */
 	sm_registercommand("__eof", handler__eof, vars->commands, NULL, NULL, NULL);
 
@@ -188,8 +179,7 @@ bool sm_init(void)
 	return true;
 }
 
-void sm_cleanup(void)
-{
+void sm_cleanup(void){
 	/* free any allocated memory used */
 	l_destroy(sm_globals.regions);
 	if (sm_globals.commands)
@@ -214,25 +204,141 @@ void sm_cleanup(void)
 	sm_detach(sm_globals.target);
 }
 
-void sm_backend_exec_cmd(const char *commandline)
-{
+void sm_backend_exec_cmd(const char *commandline){
 	sm_execcommand(&sm_globals, commandline);
 	fflush(stdout);
 	fflush(stderr);
 }
 
-unsigned long sm_get_num_matches(void)
-{
+unsigned long sm_get_num_matches(void){
 	return sm_globals.num_matches;
 }
 
-double sm_get_scan_progress(void)
-{
+double sm_get_scan_progress(void){
 	return sm_globals.scan_progress;
 }
 
-void sm_set_stop_flag(bool stop_flag)
-{
+void sm_set_stop_flag(bool stop_flag){
 	sm_globals.stop_flag = stop_flag;
+}
+
+/* scanmem commands */
+bool sm_cmd_pid(unsigned long int pid){
+	if (pid != 0) {
+		sm_globals.target = (pid_t)pid;
+		if (sm_globals.target == 0) {
+			show_error("`%s` does not look like a valid pid.\n", pid);
+			return false;
+		}
+	}
+	else if (sm_globals.target) {
+		/* print the pid of the target program */
+		show_info("target pid is %u.\n", sm_globals.target);
+		return true;
+	}
+	else {
+		show_info("no target is currently set.\n");
+		return false;
+	}
+
+	return sm_cmd_reset();
+}
+
+bool sm_cmd_reset(void){
+	/* reset scan progress */
+	sm_globals.scan_progress = 0;
+	if (sm_globals.matches){
+		free(sm_globals.matches);
+		sm_globals.matches = NULL;
+		sm_globals.num_matches = 0;
+	}
+
+	/* refresh list of regions */
+	l_destroy(sm_globals.regions);
+
+	/* create a new linked list of regions */
+	if ((sm_globals.regions = l_init()) == NULL) {
+		show_error("sorry, there was a problem allocating memory.\n");
+		return false;
+	}
+
+	/* read in maps if a pid is known */
+	if (sm_globals.target && sm_readmaps(sm_globals.target, sm_globals.regions, sm_globals.options.region_scan_level) != true) {
+		show_error("sorry, there was a problem getting a list of regions to search.\n");
+		show_warn("the pid may be invalid, or you don't have permission.\n");
+		sm_globals.target = 0;
+		return false;
+	}
+
+	/* reset history */
+	struct history_entry_t *next = NULL, *cur = TAILQ_FIRST(&sm_globals.match_history);
+	while(cur != NULL) {
+		next = TAILQ_NEXT(cur, list);
+		free(cur->matches);
+		free(cur);
+		cur = next;
+	}
+	TAILQ_INIT(&sm_globals.match_history);
+	return true;
+}
+
+bool sm_cmd_undo(void){
+	if(TAILQ_EMPTY(&sm_globals.match_history)) {
+		show_info("nothing to undo\n");
+		return true;
+	}
+
+	if (sm_globals.current != NULL) {
+		struct history_entry_t *previous = TAILQ_PREV(sm_globals.current, history_list_t, list);
+
+		if(previous != NULL) {
+			matches_and_old_values_array *tmp = realloc(sm_globals.matches,
+					previous->matches->bytes_allocated);
+			if(tmp != NULL) {
+				sm_globals.matches = tmp;
+			}
+			else {
+				show_error("could not allocate memory\n");
+				return false;
+			}
+			sm_globals.current = previous;
+			/* copy since the array would be resized by null_terminate which would
+			 * cause use after free at some point */ 
+			memcpy(sm_globals.matches, previous->matches, previous->matches->bytes_allocated);
+			sm_globals.num_matches = previous->num_matches;
+		}
+		else {
+			show_info("already at first entry in history\n");
+		}
+	}
+
+	return true;
+}
+
+bool sm_cmd_redo(void){
+	if(sm_globals.current == NULL) {
+		show_info("nothing to redo\n");
+		return true;
+	}
+
+	struct history_entry_t *next = TAILQ_NEXT(sm_globals.current, list);
+	if (next == NULL) {
+		show_info("already at last entry in history\n");
+		return true;
+	}
+
+	matches_and_old_values_array *tmp = realloc(sm_globals.matches, next->matches->bytes_allocated);
+	if(tmp == NULL) {
+		show_error("could not allocate memory\n");
+		return false;
+	}
+
+	sm_globals.current = next;
+	sm_globals.matches = tmp;
+	/* copy since the array would be resized by null_terminate which would
+	 * cause use after free at some point */ 
+	memcpy(sm_globals.matches, next->matches, next->matches->bytes_allocated);
+	sm_globals.num_matches = next->num_matches;
+	return true;
 }
 

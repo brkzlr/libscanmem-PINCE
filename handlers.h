@@ -113,22 +113,6 @@ SET_FORMAT_DOC \
 
 bool handler__delete(globals_t *vars, char **argv, unsigned argc);
 
-#define RESET_SHRTDOC "forget all matches, and reinitialise regions"
-#define RESET_LONGDOC "usage: reset\n" \
-	"Forget all matches and regions, and reread regions from the relevant\n" \
-"maps file. Useful if you have made an error, or want to find a new\n" \
-"variable.\n"
-
-bool handler__reset(globals_t *vars, char **argv, unsigned argc);
-
-#define PID_SHRTDOC "print current pid, or attach to a new process"
-#define PID_LONGDOC "usage: pid [pid]\n" \
-	"If `pid` is specified, reset current session and then attach to new\n" \
-"process `pid`. If `pid` is not specified, print information about\n" \
-"current process."
-
-bool handler__pid(globals_t *vars, char **argv, unsigned argc);
-
 #define SNAPSHOT_SHRTDOC "take a snapshot of the current process state"
 #define SNAPSHOT_LONGDOC "usage: snapshot\n" \
 	"Take a snapshot of the entire process in its current state. This is useful\n" \
@@ -338,15 +322,5 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
 "\toption scan_data_type int32\n"
 
 bool handler__option(globals_t *vars, char **argv, unsigned argc);
-
-#define UNDO_SHORTDOC "undo a scan"
-#define UNDO_LONGDOC  "Undoes a scan that you've just done. History will be reset once a scan is reset."
-#define UNDO_COMPLETE "undo"
-bool handler__undo(globals_t *vars, char **argv, unsigned argc);
-
-#define REDO_SHORTDOC "redo a scan"
-#define REDO_LONGDOC "redoes the scan that you've undone"
-#define REDO_COMPLETE "redo"
-bool handler__redo(globals_t *vars, char **argv, unsigned argc);
 
 #endif /* HANDLERS_H */
