@@ -369,6 +369,9 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
 
 	/* list all known matches */
 	while (reading_swath_index->first_byte_in_child) {
+		if (num == max_to_print) {
+			break;
+		}
 		match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
 		/* only actual matches are considered */
