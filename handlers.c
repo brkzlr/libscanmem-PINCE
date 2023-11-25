@@ -699,7 +699,7 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 		return false;
 	}
 
-	if (vars->matches) {
+	if (vars->matches != NULL) {
 		if (vars->num_matches == 0) {
 			show_error("there are currently no matches.\n");
 			return false;
@@ -737,6 +737,7 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 		show_info("match identified, use \"set\" to modify value.\n");
 	}
 
+	sm_add_current_match_to_history();
 	return true;
 }
 
@@ -931,35 +932,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 		show_info("match identified, use \"set\" to modify value.\n");
 	}
 	if (vars->matches != NULL) {
-		struct history_entry_t *entry = malloc(sizeof(struct history_entry_t));
-		matches_and_old_values_array *matches = vars->matches;
-		matches_and_old_values_array *match_copy = malloc(matches->bytes_allocated);
-
-		if (match_copy != NULL) {
-			memcpy(match_copy, matches, matches->bytes_allocated);
-			entry->num_matches = vars->num_matches;
-			entry->matches = match_copy;
-
-			if (!TAILQ_EMPTY(&vars->match_history)) {
-				/* remove all the ones that would be overwritten first */
-				struct history_entry_t *next = TAILQ_NEXT(vars->current, list);
-				struct history_entry_t *tmp;
-
-				while(next != NULL) {
-					tmp = TAILQ_NEXT(next, list);
-					free(next->matches);
-					TAILQ_REMOVE(&vars->match_history, next, list);
-					free(next);
-					next = tmp;
-				}
-				TAILQ_INSERT_AFTER(&vars->match_history, vars->current, entry, list);
-			} else {
-				TAILQ_INSERT_TAIL(&vars->match_history, entry, list);
-			}
-
-			vars->current = entry;
-			vars->history_length++;
-		}
+		sm_add_current_match_to_history();
 	}
 	ret = true;
 

@@ -29,21 +29,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <sys/queue.h>
 
 #include "scanroutines.h"
 #include "list.h"
 #include "maps.h"
 #include "value.h"
 #include "targetmem.h"
-
-struct history_entry_t {
-	TAILQ_ENTRY(history_entry_t) list; /* there's probably a better name for this */
-	unsigned long num_matches;
-	matches_and_old_values_array *matches;
-};
-
-TAILQ_HEAD(history_list_t, history_entry_t);
 
 /* global settings */
 typedef struct {

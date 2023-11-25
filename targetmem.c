@@ -30,7 +30,6 @@
 #include "targetmem.h"
 #include "value.h"
 
-
 matches_and_old_values_array *
 allocate_array (matches_and_old_values_array *array, size_t max_bytes)
 {

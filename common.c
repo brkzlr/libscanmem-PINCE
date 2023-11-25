@@ -91,3 +91,39 @@ bool sm_process_is_dead(pid_t pid){
 	return (check_process(pid) != PROC_RUNNING);
 }
 
+bool sm_add_current_match_to_history(){
+	matches_and_old_values_array* matches = sm_globals.matches;
+	matches_and_old_values_array* match_copy = malloc(matches->bytes_allocated);
+
+	if (match_copy != NULL) {
+		struct history_entry_t* entry = malloc(sizeof(struct history_entry_t));
+		memcpy(match_copy, matches, matches->bytes_allocated);
+		entry->num_matches = sm_globals.num_matches;
+		entry->matches = match_copy;
+
+		if (!TAILQ_EMPTY(&sm_globals.match_history)) {
+			/* remove all the ones that would be overwritten first */
+			struct history_entry_t* next = TAILQ_NEXT(sm_globals.current, list);
+			struct history_entry_t* tmp;
+
+			while(next != NULL) {
+				tmp = TAILQ_NEXT(next, list);
+				free(next->matches);
+				TAILQ_REMOVE(&sm_globals.match_history, next, list);
+				free(next);
+				next = tmp;
+			}
+			TAILQ_INSERT_AFTER(&sm_globals.match_history, sm_globals.current, entry, list);
+		} else {
+			TAILQ_INSERT_TAIL(&sm_globals.match_history, entry, list);
+		}
+
+		sm_globals.current = entry;
+		sm_globals.history_length++;
+
+		return true;
+	}
+
+	return false;
+}
+
