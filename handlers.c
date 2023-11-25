@@ -517,7 +517,6 @@ bool handler__snapshot(globals_t *vars, char **argv, unsigned argc)
 {
 	USEPARAMS();
 
-
 	/* check that a pid has been specified */
 	if (vars->target == 0) {
 		show_error("no target set.\n");
@@ -532,6 +531,7 @@ bool handler__snapshot(globals_t *vars, char **argv, unsigned argc)
 		return false;
 	}
 
+	sm_add_current_match_to_history();
 	return true;
 }
 
