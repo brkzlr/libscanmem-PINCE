@@ -41,11 +41,8 @@ typedef struct {
 	unsigned exit:1;
 	pid_t target;
 	matches_and_old_values_array *matches;  /* current matches */
-	/* current match, used for easy travelsal of the linked list */
-	struct history_entry_t *current;        
-	struct history_list_t match_history;    /* linked list of matches */
-	unsigned short history_length;
 	unsigned long num_matches;
+	struct undo_entry_t *undo_entry;
 	double scan_progress;
 	volatile bool stop_flag;
 	list_t *regions;
@@ -78,7 +75,6 @@ void sm_set_stop_flag(bool stop_flag);
 bool sm_cmd_pid(unsigned long int pid);
 bool sm_cmd_reset(void);
 bool sm_cmd_undo(void);
-bool sm_cmd_redo(void);
 
 /* procmem.c */
 bool sm_attach(pid_t target);

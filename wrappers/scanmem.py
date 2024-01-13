@@ -48,7 +48,6 @@ class Scanmem():
         'sm_cmd_pid': (ctypes.c_bool, ctypes.c_uint32),
         'sm_cmd_reset': (ctypes.c_bool, ),
         'sm_cmd_undo' : (ctypes.c_bool, ),
-        'sm_cmd_redo' : (ctypes.c_bool, )
     }
 
     def _init_lib_functions(self):
@@ -114,9 +113,6 @@ class Scanmem():
 
     def undo_scan(self):
         return self._lib.sm_cmd_undo()
-
-    def redo_scan(self):
-        return self._lib.sm_cmd_redo()
 
     def matches(self):
         """

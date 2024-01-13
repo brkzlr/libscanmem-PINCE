@@ -68,12 +68,10 @@ typedef struct {
 	size_t index;
 } match_location;
 
-struct history_entry_t {
-	TAILQ_ENTRY(history_entry_t) list; /* there's probably a better name for this */
+struct undo_entry_t {
 	unsigned long num_matches;
 	matches_and_old_values_array *matches;
 };
-TAILQ_HEAD(history_list_t, history_entry_t);
 
 /* Public functions */
 

@@ -45,10 +45,8 @@ globals_t sm_globals = {
 	0,                          /* exit flag */
 	0,                          /* pid target */
 	NULL,                       /* matches */
-	NULL,                       /* current */
-	TAILQ_HEAD_INITIALIZER(sm_globals.match_history), /* history */
-	0,                          /* history_length */
-	0,                          /* match count */
+	0,                       	/* matches count */
+	NULL,                       /* undo entry */
 	0,                          /* scan progress */
 	false,                      /* stop flag */
 	NULL,                       /* regions */
@@ -102,7 +100,6 @@ out:
 /* scanmem general */
 bool sm_init(void){
 	globals_t *vars = &sm_globals;
-	TAILQ_INIT(&vars->match_history);
 	/* before attaching to target, install signal handler to detach on error */
 	if (vars->options.debug == 0){ /* in debug mode, let it crash and see the core dump */
 		(void) signal(SIGHUP, sighandler);
@@ -190,16 +187,13 @@ void sm_cleanup(void){
 	if (sm_globals.matches)
 		free(sm_globals.matches);
 
-	if(!TAILQ_EMPTY(&sm_globals.match_history)) {
-		struct history_entry_t *next = NULL, *iterator = TAILQ_FIRST(&sm_globals.match_history);
-		while(iterator != NULL) {
-			next = TAILQ_NEXT(iterator, list);
-			free(iterator->matches);
-			free(iterator);
-			iterator = next;    
-		}
-
+	/* free undo entry */
+	if (sm_globals.undo_entry){
+		free(sm_globals.undo_entry->matches);
+		free(sm_globals.undo_entry);
+		sm_globals.undo_entry = NULL;
 	}
+
 	/* attempt to detach just in case */
 	sm_detach(sm_globals.target);
 }
@@ -270,75 +264,44 @@ bool sm_cmd_reset(void){
 		return false;
 	}
 
-	/* reset history */
-	struct history_entry_t *next = NULL, *cur = TAILQ_FIRST(&sm_globals.match_history);
-	while(cur != NULL) {
-		next = TAILQ_NEXT(cur, list);
-		free(cur->matches);
-		free(cur);
-		cur = next;
+	/* reset undo entry */
+	if (sm_globals.undo_entry){
+		free(sm_globals.undo_entry->matches);
+		free(sm_globals.undo_entry);
+		sm_globals.undo_entry = NULL;
 	}
-	TAILQ_INIT(&sm_globals.match_history);
+
 	return true;
 }
 
 bool sm_cmd_undo(void){
-	if(TAILQ_EMPTY(&sm_globals.match_history)) {
+	if(sm_globals.undo_entry == NULL) {
 		show_info("nothing to undo\n");
 		return true;
 	}
 
-	if (sm_globals.current != NULL) {
-		struct history_entry_t *previous = TAILQ_PREV(sm_globals.current, history_list_t, list);
-
-		if(previous != NULL) {
-			matches_and_old_values_array *tmp = realloc(sm_globals.matches,
-					previous->matches->bytes_allocated);
-			if(tmp != NULL) {
-				sm_globals.matches = tmp;
-			}
-			else {
-				show_error("could not allocate memory\n");
-				return false;
-			}
-			sm_globals.current = previous;
-			/* copy since the array would be resized by null_terminate which would
-			 * cause use after free at some point */ 
-			memcpy(sm_globals.matches, previous->matches, previous->matches->bytes_allocated);
-			sm_globals.num_matches = previous->num_matches;
-		}
-		else {
-			show_info("already at first entry in history\n");
-		}
+	struct undo_entry_t* undo_entry_ptr = sm_globals.undo_entry;
+	matches_and_old_values_array *tmp = realloc(sm_globals.matches, undo_entry_ptr->matches->bytes_allocated);
+	if(tmp != NULL) {
+		sm_globals.matches = tmp;
 	}
-
-	return true;
-}
-
-bool sm_cmd_redo(void){
-	if(sm_globals.current == NULL) {
-		show_info("nothing to redo\n");
-		return true;
-	}
-
-	struct history_entry_t *next = TAILQ_NEXT(sm_globals.current, list);
-	if (next == NULL) {
-		show_info("already at last entry in history\n");
-		return true;
-	}
-
-	matches_and_old_values_array *tmp = realloc(sm_globals.matches, next->matches->bytes_allocated);
-	if(tmp == NULL) {
+	else {
 		show_error("could not allocate memory\n");
 		return false;
 	}
-
-	sm_globals.current = next;
-	sm_globals.matches = tmp;
 	/* copy since the array would be resized by null_terminate which would
 	 * cause use after free at some point */ 
-	memcpy(sm_globals.matches, next->matches, next->matches->bytes_allocated);
-	sm_globals.num_matches = next->num_matches;
+	memcpy(sm_globals.matches, undo_entry_ptr->matches, undo_entry_ptr->matches->bytes_allocated);
+	sm_globals.num_matches = undo_entry_ptr->num_matches;
+
+	/* Ideally we should leave those alone and just realloc on the next scan
+	 * but due to the possibility of not searching anymore after undo
+	 * we should just free them to be on the safe side.
+	 * Performance will be monitored after change to ensure it's not too affected. */
+	free(sm_globals.undo_entry->matches);
+	free(sm_globals.undo_entry);
+	sm_globals.undo_entry = NULL;
+
 	return true;
 }
 

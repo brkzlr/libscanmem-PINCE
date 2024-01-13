@@ -531,7 +531,6 @@ bool handler__snapshot(globals_t *vars, char **argv, unsigned argc)
 		return false;
 	}
 
-	sm_add_current_match_to_history();
 	return true;
 }
 
@@ -704,6 +703,8 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 			show_error("there are currently no matches.\n");
 			return false;
 		}
+
+		sm_add_current_match_as_undo_entry();
 		if (sm_checkmatches(vars, m, &val) == false) {
 			show_error("failed to search target address space.\n");
 			return false;
@@ -737,7 +738,6 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 		show_info("match identified, use \"set\" to modify value.\n");
 	}
 
-	sm_add_current_match_to_history();
 	return true;
 }
 
@@ -795,7 +795,9 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
 			show_error("there are currently no matches.\n");
 			return false;
 		}
+
 		/* already know some matches */
+		sm_add_current_match_as_undo_entry();
 		if (sm_checkmatches(vars, MATCHEQUALTO, &val) != true) {
 			show_error("failed to search target address space.\n");
 			goto fail;
@@ -914,7 +916,9 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 			show_error("there are currently no matches.\n");
 			goto retl;
 		}
+
 		/* already know some matches */
+		sm_add_current_match_as_undo_entry();
 		if (sm_checkmatches(vars, m, val) != true) {
 			show_error("failed to search target address space.\n");
 			goto retl;
@@ -930,9 +934,6 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 	/* check if we now know the only possible candidate */
 	if (vars->num_matches == 1) {
 		show_info("match identified, use \"set\" to modify value.\n");
-	}
-	if (vars->matches != NULL) {
-		sm_add_current_match_to_history();
 	}
 	ret = true;
 
