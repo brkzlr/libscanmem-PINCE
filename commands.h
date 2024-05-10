@@ -22,32 +22,30 @@
 
 #include <stdbool.h>
 
-#include "scanmem.h"
 #include "list.h"
+#include "scanmem.h"
 
-
-typedef bool (*handler_ptr)(globals_t *vars, char **argv, unsigned argc);
+typedef bool (*handler_ptr)(globals_t* vars, char** argv, unsigned argc);
 
 typedef struct {
-	char *word;
-	list_t *list;
+	char* word;
+	list_t* list;
 	unsigned index;
 } completion_t;
 
 typedef struct {
 	handler_ptr handler;
-	char *command;
-	char *shortdoc;
-	char *longdoc;
-	list_t *completions;
+	char* command;
+	char* shortdoc;
+	char* longdoc;
+	list_t* completions;
 	unsigned complidx;
 } command_t;
 
+bool sm_registercommand(const char* command, handler_ptr handler, list_t* commands,
+    char* shortdoc, char* longdoc, const char* complstr);
+bool sm_execcommand(globals_t* vars, const char* commandline);
 
-bool sm_registercommand(const char *command, handler_ptr handler, list_t *commands,
-		char *shortdoc, char *longdoc, const char *complstr);
-bool sm_execcommand(globals_t *vars, const char *commandline);
-
-void sm_free_all_completions(list_t *commands);
+void sm_free_all_completions(list_t* commands);
 
 #endif /* COMMANDS_H */

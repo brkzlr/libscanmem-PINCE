@@ -25,26 +25,26 @@
 #include <stdlib.h>
 
 typedef struct element {
-	void *data;
-	struct element *next;
+	void* data;
+	struct element* next;
 } element_t;
 
 typedef struct {
 	size_t size;
-	element_t *head;
-	element_t *tail;
+	element_t* head;
+	element_t* tail;
 } list_t;
 
 /* create a new list */
-static inline list_t *l_init(void)
+static inline list_t* l_init(void)
 {
 	return calloc(1, sizeof(list_t));
 }
 
 /* add a new element to the list */
-static inline int l_append(list_t *list, element_t *element, void *data)
+static inline int l_append(list_t* list, element_t* element, void* data)
 {
-	element_t *n = calloc(1, sizeof(element_t));
+	element_t* n = calloc(1, sizeof(element_t));
 
 	if (n == NULL)
 		return -1;
@@ -59,7 +59,8 @@ static inline int l_append(list_t *list, element_t *element, void *data)
 
 		n->next = list->head;
 		list->head = n;
-	} else {
+	}
+	else {
 
 		/* insertion at the middle of a list */
 		if (element->next == NULL) {
@@ -76,9 +77,9 @@ static inline int l_append(list_t *list, element_t *element, void *data)
 }
 
 /* remove the element at element->next */
-static inline void l_remove(list_t *list, element_t *element, void **data)
+static inline void l_remove(list_t* list, element_t* element, void** data)
 {
-	element_t *o;
+	element_t* o;
 
 	/* remove from head */
 	if (element == NULL) {
@@ -93,13 +94,13 @@ static inline void l_remove(list_t *list, element_t *element, void **data)
 		if (list->size == 1) {
 			list->tail = NULL;
 		}
-	} else {
+	}
+	else {
 		if (data) {
 			*data = element->next->data;
 		}
 
 		o = element->next;
-
 
 		if ((element->next = element->next->next) == NULL) {
 			list->tail = element;
@@ -117,9 +118,9 @@ static inline void l_remove(list_t *list, element_t *element, void **data)
 }
 
 /* remove the nth element from head */
-static inline void l_remove_nth(list_t *list, size_t n, void **data)
+static inline void l_remove_nth(list_t* list, size_t n, void** data)
 {
-	element_t *np = list->head;
+	element_t* np = list->head;
 
 	/* traverse to correct element */
 	while (n--) {
@@ -131,9 +132,9 @@ static inline void l_remove_nth(list_t *list, size_t n, void **data)
 }
 
 /* destroy the whole list */
-static inline void l_destroy(list_t *list)
+static inline void l_destroy(list_t* list)
 {
-	void *data;
+	void* data;
 
 	if (list == NULL)
 		return;
@@ -148,10 +149,10 @@ static inline void l_destroy(list_t *list)
 }
 
 /* concatenate list src with list dst */
-static inline int l_concat(list_t *dst, list_t **src)
+static inline int l_concat(list_t* dst, list_t** src)
 {
-	void *data;
-	element_t *n;
+	void* data;
+	element_t* n;
 
 	n = (*src)->head;
 

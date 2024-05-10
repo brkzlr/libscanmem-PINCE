@@ -33,25 +33,25 @@
 #ifndef SHOW_MESSAGE_H
 #define SHOW_MESSAGE_H
 
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
-#include <errno.h>
 
 /* prepend 'info: ', output to stderr */
-void show_info(const char *fmt, ...);
+void show_info(const char* fmt, ...);
 /* prepend 'error: ', output to stderr */
-void show_error(const char *fmt, ...);
+void show_error(const char* fmt, ...);
 /* prepend 'warn: ', output to stderr */
-void show_warn(const char *fmt, ...);
+void show_warn(const char* fmt, ...);
 
 /* display message only when in debug mode */
-void show_debug(const char *fmt, ...);
+void show_debug(const char* fmt, ...);
 
 /* pager support routines */
-FILE *get_pager(FILE *fallback_output);
+FILE* get_pager(FILE* fallback_output);
 
-static inline void close_pager(FILE *pager)
+static inline void close_pager(FILE* pager)
 {
 	if (pager != NULL && pager != stdout && pager != stderr) {
 		if (pclose(pager) == -1 && errno != EPIPE)

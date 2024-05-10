@@ -25,11 +25,11 @@
 #include <stdlib.h>
 
 struct set {
-	size_t  size; /* size of set (used) */
-	size_t *buf;  /* value buffer       */
+	size_t size; /* size of set (used) */
+	size_t* buf; /* value buffer       */
 };
 
-static inline void set_cleanup(struct set *set)
+static inline void set_cleanup(struct set* set)
 {
 	if (set)
 		free(set->buf);
@@ -44,10 +44,10 @@ static inline void set_cleanup(struct set *set)
  *
  * NOTE: `_reserved_for_set_iteration_zzaw2_df_` is reserved, named randomly to avoid namespace crash
  */
-#define foreach_set_bw(i, set)                                                \
-	for (size_t _reserved_for_set_iteration_zzaw2_df_ = 0, i = (set)->size-1; \
-			_reserved_for_set_iteration_zzaw2_df_ < (set)->size;                 \
-			_reserved_for_set_iteration_zzaw2_df_++, i--)
+#define foreach_set_bw(i, set)                                                  \
+	for (size_t _reserved_for_set_iteration_zzaw2_df_ = 0, i = (set)->size - 1; \
+	     _reserved_for_set_iteration_zzaw2_df_ < (set)->size;                   \
+	     _reserved_for_set_iteration_zzaw2_df_++, i--)
 
-bool parse_uintset(const char *, struct set *, size_t);
+bool parse_uintset(const char*, struct set*, size_t);
 #endif /* SETS_H */

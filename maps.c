@@ -23,26 +23,26 @@
    */
 
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
-#include <stdio.h>
-#include <sys/types.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "list.h"
 #include "maps.h"
 #include "show_message.h"
 
-const char *region_type_names[] = REGION_TYPE_NAMES;
+const char* region_type_names[] = REGION_TYPE_NAMES;
 
-bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_level)
+bool sm_readmaps(pid_t target, list_t* regions, region_scan_level_t region_scan_level)
 {
-	FILE *maps;
+	FILE* maps;
 	char name[128], *line = NULL;
 	char exelink[128];
 	size_t len = 0;
@@ -73,10 +73,10 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 	/* get executable name */
 	snprintf(exelink, sizeof(exelink), "/proc/%u/exe", target);
 	linkbuf_size = readlink(exelink, exename, MAX_LINKBUF_SIZE - 1);
-	if (linkbuf_size > 0)
-	{
+	if (linkbuf_size > 0) {
 		exename[linkbuf_size] = 0;
-	} else {
+	}
+	else {
 		/* readlink may fail for special processes, just treat as empty in
 		   order not to miss those regions */
 		exename[0] = 0;
@@ -85,7 +85,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 	/* read every line of the maps file */
 	while (getline(&line, &len, maps) != -1) {
 		unsigned long start, end;
-		region_t *map = NULL;
+		region_t* map = NULL;
 		char read, write, exec, cow;
 		int offset, dev_major, dev_minor, inode;
 		region_type_t type = REGION_TYPE_MISC;
@@ -98,7 +98,8 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 
 		/* parse each line */
 		if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %[^\n]", &start, &end, &read,
-					&write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
+		        &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename)
+		    >= 6) {
 			/*
 			 * get the load address for regions of the same ELF file
 			 *
@@ -128,15 +129,14 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 
 			/* detect further regions of the same ELF file and its end */
 			if (code_regions > 0) {
-				if (exec == 'x' || (strncmp(filename, binname,
-								MAX_LINKBUF_SIZE) != 0 && (filename[0] != '\0' ||
-									start != prev_end)) || code_regions >= 4) {
+				if (exec == 'x' || (strncmp(filename, binname, MAX_LINKBUF_SIZE) != 0 && (filename[0] != '\0' || start != prev_end)) || code_regions >= 4) {
 					code_regions = 0;
 					is_exe = false;
 					/* exe with .text and without .data is impossible */
 					if (exe_regions > 1)
 						exe_regions = 0;
-				} else {
+				}
+				else {
 					code_regions++;
 					if (is_exe)
 						exe_regions++;
@@ -152,15 +152,15 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 						is_exe = true;
 					}
 					strncpy(binname, filename, MAX_LINKBUF_SIZE);
-					binname[MAX_LINKBUF_SIZE - 1] = '\0';  /* just to be sure */
+					binname[MAX_LINKBUF_SIZE - 1] = '\0'; /* just to be sure */
 					/* detect the second region of the exe after skipping regions */
-				} else if (exe_regions == 1 && filename[0] != '\0' &&
-						strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0) {
+				}
+				else if (exe_regions == 1 && filename[0] != '\0' && strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0) {
 					code_regions = ++exe_regions;
 					load_addr = exe_load;
 					is_exe = true;
 					strncpy(binname, filename, MAX_LINKBUF_SIZE);
-					binname[MAX_LINKBUF_SIZE - 1] = '\0';  /* just to be sure */
+					binname[MAX_LINKBUF_SIZE - 1] = '\0'; /* just to be sure */
 				}
 				if (exe_regions < 2)
 					load_addr = start;
@@ -187,32 +187,28 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 				}
 
 				/* determine if this region is useful */
-				switch (region_scan_level)
-				{
-					case REGION_ALL:
+				switch (region_scan_level) {
+				case REGION_ALL:
+					useful = true;
+					break;
+				case REGION_ALL_RW:
+					useful = true;
+					break;
+				case REGION_HEAP_STACK_EXECUTABLE_BSS:
+					if (filename[0] == '\0') {
 						useful = true;
 						break;
-					case REGION_ALL_RW:
+					}
+					/* fall through */
+				case REGION_HEAP_STACK_EXECUTABLE:
+					if (type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK) {
 						useful = true;
 						break;
-					case REGION_HEAP_STACK_EXECUTABLE_BSS:
-						if (filename[0] == '\0')
-						{
-							useful = true;
-							break;
-						}
-						/* fall through */
-					case REGION_HEAP_STACK_EXECUTABLE:
-						if (type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK)
-						{
-							useful = true;
-							break;
-						}
-						/* test if the region is mapped to the executable */
-						if (type == REGION_TYPE_EXE ||
-								strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
-							useful = true;
-						break;
+					}
+					/* test if the region is mapped to the executable */
+					if (type == REGION_TYPE_EXE || strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
+						useful = true;
+					break;
 				}
 
 				if (!useful)
@@ -227,8 +223,8 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 				/* initialize this region */
 				map->flags.read = true;
 				map->flags.write = (write == 'w');
-				map->start = (void *) start;
-				map->size = (unsigned long) (end - start);
+				map->start = (void*)start;
+				map->size = (unsigned long)(end - start);
 				map->type = type;
 				map->load_addr = load_addr;
 

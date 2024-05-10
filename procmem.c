@@ -27,37 +27,36 @@
 
 /* for pread */
 #ifdef _XOPEN_SOURCE
-# undef _XOPEN_SOURCE
+#undef _XOPEN_SOURCE
 #endif
 #define _XOPEN_SOURCE 500
 
-#include <time.h>
-#include <sys/types.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <limits.h>
-#include <fcntl.h>
 
 #include "common.h"
-#include "value.h"
-#include "scanroutines.h"
+#include "interrupt.h"
 #include "scanmem.h"
+#include "scanroutines.h"
 #include "show_message.h"
 #include "targetmem.h"
-#include "interrupt.h"
+#include "value.h"
 
 /* progress handling */
 #define NUM_DOTS (10)
 #define NUM_SAMPLES (100)
-#define MAX_PROGRESS (1.0)  /* 100% */
+#define MAX_PROGRESS (1.0) /* 100% */
 #if (!NUM_DOTS || !NUM_SAMPLES || NUM_SAMPLES % NUM_DOTS != 0)
 #error Invalid NUM_DOTS to NUM_SAMPLES proportion!
 #endif
@@ -68,15 +67,16 @@
  * Max size is the maximum allowed rounded VLT scan length, aka UINT16_MAX,
  * plus a `PEEKDATA_CHUNK`, to store a full extra chunk for maneuverability */
 #define PEEKDATA_CHUNK 2048
-#define MAX_PEEKBUF_SIZE ((1<<16) + PEEKDATA_CHUNK)
+#define MAX_PEEKBUF_SIZE ((1 << 16) + PEEKDATA_CHUNK)
 static struct {
-	uint8_t cache[MAX_PEEKBUF_SIZE];  /* read from pread()  */
-	unsigned size;              /* amount of valid memory stored (in bytes) */
-	const char *base;           /* base address of cached region */
-	int procmem_fd;             /* file descriptor of the opened `/proc/<pid>/mem` file */
+	uint8_t cache[MAX_PEEKBUF_SIZE]; /* read from pread()  */
+	unsigned size; /* amount of valid memory stored (in bytes) */
+	const char* base; /* base address of cached region */
+	int procmem_fd; /* file descriptor of the opened `/proc/<pid>/mem` file */
 } peekbuf;
 
-bool sm_attach(pid_t target){
+bool sm_attach(pid_t target)
+{
 	/* reset the peek buffer */
 	peekbuf.size = 0;
 	peekbuf.base = NULL;
@@ -99,24 +99,25 @@ bool sm_attach(pid_t target){
 	return true;
 }
 
-bool sm_detach(pid_t target){
+bool sm_detach(pid_t target)
+{
 	/* close the mem file before detaching */
 	close(peekbuf.procmem_fd);
 
 	return true;
 }
 
-
 /* Reads data from the target process, and places it on the `dest_buffer`
  * using `pread` on `/proc/pid/mem`.
  * The target process is not passed, but read from the static peekbuf.
  * `sm_attach()` MUST be called before this function. */
-static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address, size_t size){
+static inline size_t readmemory(uint8_t* dest_buffer, const char* target_address, size_t size)
+{
 	size_t nread = 0;
 
 	do {
 		ssize_t ret = pread(peekbuf.procmem_fd, dest_buffer + nread,
-				size - nread, (unsigned long)(target_address + nread));
+		    size - nread, (unsigned long)(target_address + nread));
 		if (ret == -1) {
 			/* we can't read further, report what was read */
 			return nread;
@@ -131,14 +132,15 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
 
 /*
  * sm_peekdata - fills the peekbuf cache with memory from the process
- * 
+ *
  * This routine calls `pread(...)` through readmemory above,
  * and fills the peekbuf cache, to make a local mirror of the process memory we're interested in.
  * `sm_attach()` MUST be called before this function.
  */
 
-extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength){
-	const char *reqaddr = addr;
+extern inline bool sm_peekdata(const void* addr, uint16_t length, const mem64_t** result_ptr, size_t* memlength)
+{
+	const char* reqaddr = addr;
 	unsigned int i;
 	unsigned int missing_bytes;
 
@@ -147,26 +149,26 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
 	assert(memlength != NULL);
 
 	/* check if we have a full cache hit */
-	if (peekbuf.base != NULL && reqaddr >= peekbuf.base && (unsigned long)(reqaddr + length - peekbuf.base) <= peekbuf.size){
+	if (peekbuf.base != NULL && reqaddr >= peekbuf.base && (unsigned long)(reqaddr + length - peekbuf.base) <= peekbuf.size) {
 		*result_ptr = (mem64_t*)&peekbuf.cache[reqaddr - peekbuf.base];
 		*memlength = peekbuf.base - reqaddr + peekbuf.size;
 		return true;
 	}
-	else if (peekbuf.base != NULL && reqaddr >= peekbuf.base && (unsigned long)(reqaddr - peekbuf.base) < peekbuf.size){
+	else if (peekbuf.base != NULL && reqaddr >= peekbuf.base && (unsigned long)(reqaddr - peekbuf.base) < peekbuf.size) {
 		assert(peekbuf.size != 0);
 
 		/* partial hit, we have some of the data but not all, so remove old entries - shift the frame by as far as is necessary */
 		missing_bytes = (reqaddr + length) - (peekbuf.base + peekbuf.size);
 		/* round up to the nearest PEEKDATA_CHUNK multiple, that is what could
 		 * potentially be read and we have to fit it all */
-		missing_bytes = PEEKDATA_CHUNK * (1 + (missing_bytes-1) / PEEKDATA_CHUNK);
+		missing_bytes = PEEKDATA_CHUNK * (1 + (missing_bytes - 1) / PEEKDATA_CHUNK);
 
 		/* head shift if necessary */
-		if (peekbuf.size + missing_bytes > MAX_PEEKBUF_SIZE){
+		if (peekbuf.size + missing_bytes > MAX_PEEKBUF_SIZE) {
 			unsigned int shift_size = reqaddr - peekbuf.base;
 			shift_size = PEEKDATA_CHUNK * (shift_size / PEEKDATA_CHUNK);
 
-			memmove(peekbuf.cache, &peekbuf.cache[shift_size], peekbuf.size-shift_size);
+			memmove(peekbuf.cache, &peekbuf.cache[shift_size], peekbuf.size - shift_size);
 
 			peekbuf.size -= shift_size;
 			peekbuf.base += shift_size;
@@ -180,8 +182,8 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
 	}
 
 	/* we need to retrieve memory to complete the request */
-	for (i = 0; i < missing_bytes; i += PEEKDATA_CHUNK){
-		const char *target_address = peekbuf.base + peekbuf.size;
+	for (i = 0; i < missing_bytes; i += PEEKDATA_CHUNK) {
+		const char* target_address = peekbuf.base + peekbuf.size;
 		size_t len = readmemory(&peekbuf.cache[peekbuf.size], target_address, PEEKDATA_CHUNK);
 
 		/* check if the read succeeded */
@@ -207,51 +209,59 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
 	return true;
 }
 
-static inline void print_a_dot(void){
+static inline void print_a_dot(void)
+{
 	fprintf(stderr, ".");
 	fflush(stderr);
 }
 
-static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match_flags flags){
-	switch(scan_data_type){
-		case BYTEARRAY:
-		case STRING:
-			return flags;
-			break;
-		default: /* numbers */
-			if (flags & flags_64b) return 8;
-			else if (flags & flags_32b) return 4;
-			else if (flags & flags_16b) return 2;
-			else if (flags & flags_8b ) return 1;
-			else    /* it can't be a variable of any size */ return 0;
-			break;
+static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match_flags flags)
+{
+	switch (scan_data_type) {
+	case BYTEARRAY:
+	case STRING:
+		return flags;
+		break;
+	default: /* numbers */
+		if (flags & flags_64b)
+			return 8;
+		else if (flags & flags_32b)
+			return 4;
+		else if (flags & flags_16b)
+			return 2;
+		else if (flags & flags_8b)
+			return 1;
+		else /* it can't be a variable of any size */
+			return 0;
+		break;
 	}
 }
 
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches);
  * it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true. */
-bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue){
-	matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
+bool sm_checkmatches(globals_t* vars, scan_match_type_t match_type, const uservalue_t* uservalue)
+{
+	matches_and_old_values_swath* reading_swath_index = vars->matches->swaths;
 	matches_and_old_values_swath reading_swath = *reading_swath_index;
 
 	unsigned long bytes_scanned = 0;
 	unsigned long total_scan_bytes = 0;
-	matches_and_old_values_swath *tmp_swath_index = reading_swath_index;
+	matches_and_old_values_swath* tmp_swath_index = reading_swath_index;
 	unsigned int samples_remaining = NUM_SAMPLES;
 	unsigned int samples_to_dot = SAMPLES_PER_DOT;
 	size_t bytes_at_next_sample;
 	size_t bytes_per_sample;
 
-	if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false){
+	if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false) {
 		show_error("unsupported scan for current data type.\n");
 		return false;
 	}
 
 	assert(sm_scan_routine);
 
-	while(tmp_swath_index->number_of_bytes){
+	while (tmp_swath_index->number_of_bytes) {
 		total_scan_bytes += tmp_swath_index->number_of_bytes;
-		tmp_swath_index = (matches_and_old_values_swath *)(&tmp_swath_index->data[tmp_swath_index->number_of_bytes]);
+		tmp_swath_index = (matches_and_old_values_swath*)(&tmp_swath_index->data[tmp_swath_index->number_of_bytes]);
 	}
 	bytes_per_sample = total_scan_bytes / NUM_SAMPLES;
 	bytes_at_next_sample = bytes_per_sample;
@@ -259,7 +269,7 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 	print_a_dot();
 
 	size_t reading_iterator = 0;
-	matches_and_old_values_swath *writing_swath_index = vars->matches->swaths;
+	matches_and_old_values_swath* writing_swath_index = vars->matches->swaths;
 	writing_swath_index->first_byte_in_child = NULL;
 	writing_swath_index->number_of_bytes = 0;
 
@@ -276,20 +286,20 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 
 	while (reading_swath.first_byte_in_child) {
 		unsigned int match_length = 0;
-		const mem64_t *memory_ptr;
+		const mem64_t* memory_ptr;
 		size_t memlength;
 		match_flags checkflags;
 
 		match_flags old_flags = reading_swath_index->data[reading_iterator].match_info;
 		unsigned int old_length = flags_to_memlength(vars->options.scan_data_type, old_flags);
-		void *address = reading_swath.first_byte_in_child + reading_iterator;
+		void* address = reading_swath.first_byte_in_child + reading_iterator;
 
 		/* read value from this address */
-		if (UNLIKELY(sm_peekdata(address, old_length, &memory_ptr, &memlength) == false)){
+		if (UNLIKELY(sm_peekdata(address, old_length, &memory_ptr, &memlength) == false)) {
 			/* If we can't look at the data here, just abort the whole recording, something bad happened */
 			required_extra_bytes_to_record = 0;
 		}
-		else if (old_flags != flags_empty){ /* Test only valid old matches */
+		else if (old_flags != flags_empty) { /* Test only valid old matches */
 			value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes);
 			memlength = old_length < memlength ? old_length : memlength;
 
@@ -298,7 +308,7 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 			match_length = (*sm_scan_routine)(memory_ptr, memlength, &old_val, uservalue, &checkflags);
 		}
 
-		if (match_length > 0){
+		if (match_length > 0) {
 			assert(match_length <= memlength);
 
 			/* Still a candidate. Write data.
@@ -308,15 +318,15 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 			   because as we never add more data to the array than there was before, it will not reallocate. */
 
 			writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
-					get_u8b(memory_ptr), checkflags);
+			    get_u8b(memory_ptr), checkflags);
 
 			++vars->num_matches;
 
 			required_extra_bytes_to_record = match_length - 1;
 		}
-		else if (required_extra_bytes_to_record){
+		else if (required_extra_bytes_to_record) {
 			writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
-					get_u8b(memory_ptr), flags_empty);
+			    get_u8b(memory_ptr), flags_empty);
 			--required_extra_bytes_to_record;
 		}
 
@@ -342,9 +352,8 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 
 		/* go on to the next one... */
 		++reading_iterator;
-		if (reading_iterator >= reading_swath.number_of_bytes){
-			reading_swath_index = (matches_and_old_values_swath *)
-				(&reading_swath_index->data[reading_swath.number_of_bytes]);
+		if (reading_iterator >= reading_swath.number_of_bytes) {
+			reading_swath_index = (matches_and_old_values_swath*)(&reading_swath_index->data[reading_swath.number_of_bytes]);
 			reading_swath = *reading_swath_index;
 			reading_iterator = 0;
 			required_extra_bytes_to_record = 0; /* just in case */
@@ -353,7 +362,7 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 
 	ENDINTERRUPTABLE();
 
-	if (!(vars->matches = null_terminate(vars->matches, writing_swath_index))){
+	if (!(vars->matches = null_terminate(vars->matches, writing_swath_index))) {
 		show_error("memory allocation error while reducing matches-array size\n");
 		return false;
 	}
@@ -367,20 +376,20 @@ bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const userva
 	return sm_detach(vars->target);
 }
 
-
 /* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
-bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue){
-	matches_and_old_values_swath *writing_swath_index;
+bool sm_searchregions(globals_t* vars, scan_match_type_t match_type, const uservalue_t* uservalue)
+{
+	matches_and_old_values_swath* writing_swath_index;
 	int required_extra_bytes_to_record = 0;
 	unsigned long total_size = 0;
 	unsigned long regnum = 0;
-	element_t *n = vars->regions->head;
-	region_t *r;
+	element_t* n = vars->regions->head;
+	region_t* r;
 	unsigned long total_scan_bytes = 0;
-	unsigned char *data = NULL;
+	unsigned char* data = NULL;
 
-	if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false){
-		show_error("unsupported scan for current data type.\n"); 
+	if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false) {
+		show_error("unsupported scan for current data type.\n");
 		return false;
 	}
 
@@ -389,7 +398,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 	/* stop and attach to the target */
 	if (sm_attach(vars->target) == false)
 		return false;
-
 
 	/* make sure we have some regions to search */
 	if (vars->regions->size == 0) {
@@ -403,7 +411,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 	total_size = sizeof(matches_and_old_values_array);
 
 	while (n) {
-		total_size += ((region_t *)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
+		total_size += ((region_t*)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
 		n = n->next;
 	}
 
@@ -411,7 +419,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
 	show_debug("allocate array, max size %ld\n", total_size);
 
-	if (!(vars->matches = allocate_array(vars->matches, total_size))){
+	if (!(vars->matches = allocate_array(vars->matches, total_size))) {
 		show_error("could not allocate match array\n");
 		return false;
 	}
@@ -422,8 +430,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 	writing_swath_index->number_of_bytes = 0;
 
 	/* get total number of bytes */
-	for(n = vars->regions->head; n; n = n->next)
-		total_scan_bytes += ((region_t *)n->data)->size;
+	for (n = vars->regions->head; n; n = n->next)
+		total_scan_bytes += ((region_t*)n->data)->size;
 
 	vars->scan_progress = 0.0;
 	vars->stop_flag = false;
@@ -445,8 +453,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 		 * The actual allocation is that plus the rounded size of the maximum possible VLT.
 		 * This is needed because the last byte might be scanned as max size VLT,
 		 * thus need (2^16 - 2) extra bytes after it */
-#define MAX_BUFFER_SIZE (1<<20)
-#define MAX_ALLOC_SIZE  (MAX_BUFFER_SIZE + (1<<16))
+#define MAX_BUFFER_SIZE (1 << 20)
+#define MAX_ALLOC_SIZE (MAX_BUFFER_SIZE + (1 << 16))
 
 		/* allocate data array */
 		size_t alloc_size = MIN(r->size, MAX_ALLOC_SIZE);
@@ -458,15 +466,15 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 		/* For every offset, check if we have a match. */
 		size_t memlength = r->size;
 		size_t buffer_size = 0;
-		void *reg_pos = r->start;
-		const uint8_t *buf_pos = NULL;
-		for ( ; ; memlength--, buffer_size--, reg_pos++, buf_pos++) {
+		void* reg_pos = r->start;
+		const uint8_t* buf_pos = NULL;
+		for (;; memlength--, buffer_size--, reg_pos++, buf_pos++) {
 
 			/* check if the buffer is finished (or we just started) */
 			if (UNLIKELY(buffer_size == 0)) {
 
 				/* print a simple progress meter */
-				for ( ; memlength < bytes_remaining; bytes_remaining -= bytes_per_dot) {
+				for (; memlength < bytes_remaining; bytes_remaining -= bytes_per_dot) {
 					/* for user, just print a dot */
 					print_a_dot();
 					/* for front-end, update percentage */
@@ -474,10 +482,12 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 				}
 
 				/* the whole region is finished */
-				if (memlength == 0) break;
+				if (memlength == 0)
+					break;
 
 				/* stop scanning if asked to */
-				if (vars->stop_flag) break;
+				if (vars->stop_flag)
+					break;
 
 				/* load the next buffer block */
 				size_t read_size = MIN(memlength, MAX_ALLOC_SIZE);
@@ -508,21 +518,20 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
 			/* check if we have a match */
 			match_length = (*sm_scan_routine)(memory_ptr, memlength, NULL, uservalue, &checkflags);
-			if (UNLIKELY(match_length > 0)){
+			if (UNLIKELY(match_length > 0)) {
 				assert(match_length <= memlength);
 				writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
-						get_u8b(memory_ptr), checkflags);
+				    get_u8b(memory_ptr), checkflags);
 
 				++vars->num_matches;
 
 				required_extra_bytes_to_record = match_length - 1;
 			}
-			else if (required_extra_bytes_to_record){
+			else if (required_extra_bytes_to_record) {
 				writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
-						get_u8b(memory_ptr), flags_empty);
+				    get_u8b(memory_ptr), flags_empty);
 				--required_extra_bytes_to_record;
 			}
-
 		}
 
 		free(data);
@@ -540,7 +549,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 	/* tell front-end we've finished */
 	vars->scan_progress = MAX_PROGRESS;
 
-	if (!(vars->matches = null_terminate(vars->matches, writing_swath_index))){
+	if (!(vars->matches = null_terminate(vars->matches, writing_swath_index))) {
 		show_error("memory allocation error while reducing matches-array size\n");
 		return false;
 	}
@@ -552,9 +561,10 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 }
 
 /* Needs to support only ANYNUMBER types */
-bool sm_setaddr(pid_t target, void *addr, const value_t *to){
+bool sm_setaddr(pid_t target, void* addr, const value_t* to)
+{
 	unsigned int i;
-	uint8_t memarray[sizeof(uint64_t)] = {0};
+	uint8_t memarray[sizeof(uint64_t)] = { 0 };
 	size_t memlength;
 
 	if (sm_attach(target) == false) {
@@ -577,20 +587,21 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to){
 		return false;
 	}
 
-	if (pwrite(peekbuf.procmem_fd, memarray, sizeof(uint64_t), (long)addr) == -1){
+	if (pwrite(peekbuf.procmem_fd, memarray, sizeof(uint64_t), (long)addr) == -1) {
 		return false;
 	}
 
 	return sm_detach(target);
 }
 
-bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len){
+bool sm_read_array(pid_t target, const void* addr, void* buf, size_t len)
+{
 	if (sm_attach(target) == false) {
 		return false;
 	}
 
 	size_t nread = readmemory(buf, addr, len);
-	if (nread < len){
+	if (nread < len) {
 		sm_detach(target);
 		return false;
 	}
@@ -598,18 +609,18 @@ bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len){
 	return sm_detach(target);
 }
 
-bool sm_write_array(pid_t target, void *addr, const void *data, size_t len){
-	unsigned int i,j;
+bool sm_write_array(pid_t target, void* addr, const void* data, size_t len)
+{
+	unsigned int i, j;
 	long peek_value;
 
 	if (sm_attach(target) == false) {
 		return false;
 	}
 
-	if (pwrite(peekbuf.procmem_fd, data, len, (long)addr) == -1){
+	if (pwrite(peekbuf.procmem_fd, data, len, (long)addr) == -1) {
 		return false;
 	}
 
 	return sm_detach(target);
 }
-

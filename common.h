@@ -22,29 +22,29 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "scanmem.h"
 #include <stdbool.h>
 #include <sys/types.h>
-#include "scanmem.h"
 
 #ifndef MIN
-# define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /* From `include/linux/compiler.h`, in the linux kernel:
  * Offers a simple interface to the expect builtin */
 #ifdef __GNUC__
-# define LIKELY(x)     __builtin_expect(!!(x), 1)
-# define UNLIKELY(x)   __builtin_expect(!!(x), 0)
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-# define LIKELY(x)     (x)
-# define UNLIKELY(x)   (x)
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
 #endif
 
 /* Use the best `getenv()` implementation we have */
 #if HAVE_SECURE_GETENV
-# define util_getenv secure_getenv
+#define util_getenv secure_getenv
 #else
-# define util_getenv getenv
+#define util_getenv getenv
 #endif
 
 /* Function declarations */

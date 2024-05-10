@@ -32,10 +32,10 @@
 
 /* determine which regions we need */
 typedef enum {
-	REGION_ALL,                            /* All regions, including non-writable regions */
-	REGION_ALL_RW,                         /* each of them */
-	REGION_HEAP_STACK_EXECUTABLE,          /* heap, stack, executable */
-	REGION_HEAP_STACK_EXECUTABLE_BSS       /* heap, stack, executable, bss */
+	REGION_ALL, /* All regions, including non-writable regions */
+	REGION_ALL_RW, /* each of them */
+	REGION_HEAP_STACK_EXECUTABLE, /* heap, stack, executable */
+	REGION_HEAP_STACK_EXECUTABLE_BSS /* heap, stack, executable, bss */
 } region_scan_level_t;
 
 typedef enum {
@@ -46,26 +46,29 @@ typedef enum {
 	REGION_TYPE_STACK
 } region_type_t;
 
-#define REGION_TYPE_NAMES { "misc", "code", "exe", "heap", "stack" }
-extern const char *region_type_names[];
+#define REGION_TYPE_NAMES                      \
+	{                                          \
+		"misc", "code", "exe", "heap", "stack" \
+	}
+extern const char* region_type_names[];
 
 /* a region obtained from /proc/pid/maps, these are searched for matches */
 typedef struct {
-	void *start;             /* Start address. This is actually an (unsigned long) offset into /proc/{pid}/mem */
-	unsigned long size;              /* size */
+	void* start; /* Start address. This is actually an (unsigned long) offset into /proc/{pid}/mem */
+	unsigned long size; /* size */
 	region_type_t type;
-	unsigned long load_addr;         /* e.g. load address of the executable */
+	unsigned long load_addr; /* e.g. load address of the executable */
 	struct __attribute__((packed)) {
-		unsigned read:1;
-		unsigned write:1;
-		unsigned exec:1;
-		unsigned shared:1;
-		unsigned private:1;
+		unsigned read : 1;
+		unsigned write : 1;
+		unsigned exec : 1;
+		unsigned shared : 1;
+		unsigned private : 1;
 	} flags;
-	unsigned id;                /* unique identifier */
-	char filename[1];           /* associated file, must be last */
+	unsigned id; /* unique identifier */
+	char filename[1]; /* associated file, must be last */
 } region_t;
 
-bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_level);
+bool sm_readmaps(pid_t target, list_t* regions, region_scan_level_t region_scan_level);
 
 #endif /* MAPS_H */

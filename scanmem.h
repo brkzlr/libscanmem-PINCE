@@ -26,28 +26,28 @@
 #define SCANMEM_H
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/types.h>
 
-#include "scanroutines.h"
 #include "list.h"
 #include "maps.h"
-#include "value.h"
+#include "scanroutines.h"
 #include "targetmem.h"
+#include "value.h"
 
 /* global settings */
 typedef struct {
-	unsigned exit:1;
+	unsigned exit : 1;
 	pid_t target;
-	matches_and_old_values_array *matches;  /* current matches */
+	matches_and_old_values_array* matches; /* current matches */
 	unsigned long num_matches;
-	struct undo_entry_t *undo_entry;
+	struct undo_entry_t* undo_entry;
 	double scan_progress;
 	volatile bool stop_flag;
-	list_t *regions;
-	list_t *commands;              /* command handlers */
-	const char *current_cmdline;   /* the command being executed */
+	list_t* regions;
+	list_t* commands; /* command handlers */
+	const char* current_cmdline; /* the command being executed */
 	struct {
 		unsigned short alignment;
 		unsigned short debug;
@@ -66,7 +66,7 @@ extern globals_t sm_globals;
 /* scanmem general */
 bool sm_init(void);
 void sm_cleanup(void);
-void sm_backend_exec_cmd(const char *commandline);
+void sm_backend_exec_cmd(const char* commandline);
 unsigned long sm_get_num_matches(void);
 double sm_get_scan_progress(void);
 void sm_set_stop_flag(bool stop_flag);
@@ -79,11 +79,11 @@ bool sm_cmd_undo(void);
 /* procmem.c */
 bool sm_attach(pid_t target);
 bool sm_detach(pid_t target);
-bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength);
-bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue);
-bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue);
-bool sm_setaddr(pid_t target, void *addr, const value_t *to);
-bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len);
-bool sm_write_array(pid_t target, void *addr, const void *data, size_t len);
+bool sm_peekdata(const void* addr, uint16_t length, const mem64_t** result_ptr, size_t* memlength);
+bool sm_checkmatches(globals_t* vars, scan_match_type_t match_type, const uservalue_t* uservalue);
+bool sm_searchregions(globals_t* vars, scan_match_type_t match_type, const uservalue_t* uservalue);
+bool sm_setaddr(pid_t target, void* addr, const value_t* to);
+bool sm_read_array(pid_t target, const void* addr, void* buf, size_t len);
+bool sm_write_array(pid_t target, void* addr, const void* data, size_t len);
 
 #endif /* SCANMEM_H */

@@ -28,9 +28,9 @@
 #include "value.h"
 
 typedef enum {
-	ANYNUMBER,              /* ANYINTEGER or ANYFLOAT */
-	ANYINTEGER,             /* INTEGER of whatever width */
-	ANYFLOAT,               /* FLOAT of whatever width */
+	ANYNUMBER, /* ANYINTEGER or ANYFLOAT */
+	ANYINTEGER, /* INTEGER of whatever width */
+	ANYFLOAT, /* FLOAT of whatever width */
 	INTEGER8,
 	INTEGER16,
 	INTEGER32,
@@ -42,7 +42,7 @@ typedef enum {
 } scan_data_type_t;
 
 typedef enum {
-	MATCHANY,                /* for snapshot */
+	MATCHANY, /* for snapshot */
 	/* following: compare with a given value */
 	MATCHEQUALTO,
 	MATCHNOTEQUALTO,
@@ -60,17 +60,16 @@ typedef enum {
 	MATCHDECREASEDBY
 } scan_match_type_t;
 
-
 /* Matches a memory area given by `memory_ptr` and `memlength` against `user_value` or `old_value`
  * (or both, depending on the matching type), stores the result into saveflags.
  * NOTE: saveflags must be set to 0, since only useful bits are set, but extra bits are not cleared!
  * Returns the number of bytes needed to store said match, 0 for not matched
  */
-typedef unsigned int (*scan_routine_t)(const mem64_t *memory_ptr, size_t memlength,
-		const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags);
+typedef unsigned int (*scan_routine_t)(const mem64_t* memory_ptr, size_t memlength,
+    const value_t* old_value, const uservalue_t* user_value, match_flags* saveflags);
 extern scan_routine_t sm_scan_routine;
 
-/* 
+/*
  * Choose the global scanroutine according to the given parameters, sm_scan_routine will be set.
  * Returns whether a proper routine has been found.
  */

@@ -23,48 +23,48 @@
    */
 
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
+#include <assert.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
-#include <assert.h>
-#include <strings.h>
 #include <string.h>
-#include <stdbool.h>
-#include <ctype.h>
+#include <strings.h>
 
 #include "commands.h"
 #include "common.h"
 #include "show_message.h"
 
-static void free_completions(list_t *list)
+static void free_completions(list_t* list)
 {
-	element_t *np = list->head;
-	completion_t *compl = NULL;
+	element_t* np = list->head;
+	completion_t* compl = NULL;
 
 	while (np) {
 		compl = np->data;
 		np = np->next;
-		if (!compl)
+		if (!compl )
 			continue;
-		if (compl->list) {
-			free_completions(compl->list);
-			l_destroy(compl->list);
-			compl->list = NULL;
+		if (compl ->list) {
+			free_completions(compl ->list);
+			l_destroy(compl ->list);
+			compl ->list = NULL;
 		}
-		if (compl->word) {
-			free(compl->word);
-			compl->word = NULL;
+		if (compl ->word) {
+			free(compl ->word);
+			compl ->word = NULL;
 		}
 	}
 }
 
-void sm_free_all_completions(list_t *commands)
+void sm_free_all_completions(list_t* commands)
 {
-	element_t *np = commands->head;
-	command_t *command = NULL;
+	element_t* np = commands->head;
+	command_t* command = NULL;
 
 	while (np) {
 		command = np->data;
@@ -76,41 +76,41 @@ void sm_free_all_completions(list_t *commands)
 	}
 }
 
-static bool add_completion(list_t *wlist, char **start, size_t wlen)
+static bool add_completion(list_t* wlist, char** start, size_t wlen)
 {
-	char *word = NULL;
-	completion_t *compl = NULL;
+	char* word = NULL;
+	completion_t* compl = NULL;
 
 	word = malloc(wlen + 1);
 	if (!word)
 		goto err;
 	compl = calloc(1, sizeof(completion_t));
-	if (!compl)
+	if (!compl )
 		goto err_free;
 	memcpy(word, *start, wlen);
 	word[wlen] = '\0';
 	*start += wlen + 1;
-	compl->word = word;
-	if (l_append(wlist, NULL, compl) == -1)
+	compl ->word = word;
+	if (l_append(wlist, NULL, compl ) == -1)
 		goto err_free;
 
 	return true;
 err_free:
-	if (compl)
-		free(compl);
+	if (compl )
+		free(compl );
 	if (word)
 		free(word);
 err:
 	return false;
 }
 
-static list_t *init_subcmdlist(command_t *command, const char *complstr)
+static list_t* init_subcmdlist(command_t* command, const char* complstr)
 {
 	char *cpos, *bopos = NULL, *bcpos = NULL;
-	char *start = (char *)complstr;
+	char* start = (char*)complstr;
 	bool in_sublist = false;
 	list_t *wlist = NULL, *list;
-	completion_t *compl = NULL;
+	completion_t* compl = NULL;
 
 	wlist = l_init();
 	if (!wlist)
@@ -128,7 +128,8 @@ static list_t *init_subcmdlist(command_t *command, const char *complstr)
 				in_sublist = false;
 				bopos = strchr(start, '{');
 			}
-		} else if (bopos && cpos > bopos) {
+		}
+		else if (bopos && cpos > bopos) {
 			cpos = bopos;
 			in_sublist = true;
 			bopos = NULL;
@@ -137,9 +138,10 @@ static list_t *init_subcmdlist(command_t *command, const char *complstr)
 			goto err;
 		if (list == wlist && in_sublist && list->head->data) {
 			compl = list->head->data;
-			compl->list = l_init();
-			list = compl->list;
-		} else if (list != wlist && !in_sublist) {
+			compl ->list = l_init();
+			list = compl ->list;
+		}
+		else if (list != wlist && !in_sublist) {
 			list = wlist;
 			if (bcpos && cpos && cpos == bcpos)
 				start++;
@@ -152,7 +154,8 @@ static list_t *init_subcmdlist(command_t *command, const char *complstr)
 			goto err;
 		if (!add_completion(list, &start, strlen(start) - 1))
 			goto err;
-	} else {
+	}
+	else {
 		if (!add_completion(wlist, &start, strlen(start)))
 			goto err;
 	}
@@ -175,10 +178,10 @@ err:
  *
  */
 
-bool sm_registercommand(const char *command, handler_ptr handler, list_t *commands,
-		char *shortdoc, char *longdoc, const char *complstr)
+bool sm_registercommand(const char* command, handler_ptr handler, list_t* commands,
+    char* shortdoc, char* longdoc, const char* complstr)
 {
-	command_t *data;
+	command_t* data;
 
 	assert(commands != NULL);
 
@@ -187,11 +190,12 @@ bool sm_registercommand(const char *command, handler_ptr handler, list_t *comman
 			show_error("sorry, there was a memory allocation problem.\n");
 			return false;
 		}
-		data->command = (char *) data + sizeof(*data);
+		data->command = (char*)data + sizeof(*data);
 
 		/* command points to the extra space allocated after data */
 		strcpy(data->command, command);
-	} else {
+	}
+	else {
 		if ((data = malloc(sizeof(command_t))) == NULL) {
 			show_error("sorry, there was a memory allocation problem.\n");
 			return false;
@@ -214,15 +218,15 @@ bool sm_registercommand(const char *command, handler_ptr handler, list_t *comman
 	return true;
 }
 
-bool sm_execcommand(globals_t *vars, const char *commandline)
+bool sm_execcommand(globals_t* vars, const char* commandline)
 {
 	unsigned argc;
 	char *str = NULL, *tok = NULL;
-	char **argv = NULL;
-	command_t *err = NULL;
+	char** argv = NULL;
+	command_t* err = NULL;
 	bool ret = false;
-	list_t *commands = vars->commands;
-	element_t *np = NULL;
+	list_t* commands = vars->commands;
+	element_t* np = NULL;
 
 	assert(commandline != NULL);
 	assert(commands != NULL);
@@ -237,7 +241,7 @@ bool sm_execcommand(globals_t *vars, const char *commandline)
 	for (argc = 0; tok; argc++, str = NULL) {
 
 		/* make enough size for another pointer (+1 for NULL at end) */
-		if ((argv = realloc(argv, (argc + 1) * sizeof(char *))) == NULL) {
+		if ((argv = realloc(argv, (argc + 1) * sizeof(char*))) == NULL) {
 			show_error("sorry there was a memory allocation error.\n");
 			return false;
 		}
@@ -259,14 +263,15 @@ bool sm_execcommand(globals_t *vars, const char *commandline)
 
 	/* search commands list for appropriate handler */
 	while (np) {
-		command_t *command = np->data;
+		command_t* command = np->data;
 
 		/* check if this command matches */
 
 		if (command->command == NULL) {
 			/* the default handler has a NULL command */
 			err = command;
-		} else if (strcasecmp(argv[0], command->command) == 0) {
+		}
+		else if (strcasecmp(argv[0], command->command) == 0) {
 
 			/* match found, execute handler */
 			ret = command->handler(vars, argv, argc - 1);

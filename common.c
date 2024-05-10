@@ -29,7 +29,7 @@
 /* states returned by check_process() */
 enum pstate {
 	PROC_RUNNING,
-	PROC_ERR,  /* error during detection */
+	PROC_ERR, /* error during detection */
 	PROC_DEAD,
 	PROC_ZOMBIE
 };
@@ -41,9 +41,10 @@ enum pstate {
  * Requirements: Linux kernel, mounted /proc
  * Assumption: (pid > 0)  --> Please check your PID before!
  */
-static enum pstate check_process(pid_t pid){
-	FILE *fp = NULL;
-	char *line = NULL;
+static enum pstate check_process(pid_t pid)
+{
+	FILE* fp = NULL;
+	char* line = NULL;
 	size_t alloc_len = 0;
 	char status = '\0';
 	char path_str[128] = "/proc/";
@@ -87,25 +88,27 @@ err:
 	return PROC_ERR;
 }
 
-bool sm_process_is_dead(pid_t pid){
+bool sm_process_is_dead(pid_t pid)
+{
 	return (check_process(pid) != PROC_RUNNING);
 }
 
-bool sm_add_current_match_as_undo_entry(){
+bool sm_add_current_match_as_undo_entry()
+{
 	matches_and_old_values_array* matches = sm_globals.matches;
 	matches_and_old_values_array* match_copy = malloc(matches->bytes_allocated);
 
 	if (match_copy != NULL) {
 		memcpy(match_copy, matches, matches->bytes_allocated);
 
-		if(sm_globals.undo_entry == NULL){
+		if (sm_globals.undo_entry == NULL) {
 			struct undo_entry_t* entry = malloc(sizeof(struct undo_entry_t));
 			entry->num_matches = sm_globals.num_matches;
 			entry->matches = match_copy;
 
 			sm_globals.undo_entry = entry;
 		}
-		else{
+		else {
 			free(sm_globals.undo_entry->matches);
 			sm_globals.undo_entry->num_matches = sm_globals.num_matches;
 			sm_globals.undo_entry->matches = match_copy;
@@ -117,4 +120,3 @@ bool sm_add_current_match_as_undo_entry(){
 	show_error("failed to allocate memory for undo_entry!\n");
 	return false;
 }
-

@@ -20,7 +20,6 @@
    along with this library.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-
 #ifndef ENDIANNESS_H
 #define ENDIANNESS_H
 
@@ -70,36 +69,38 @@ static inline uint64_t swap_bytes64(uint64_t i)
 }
 
 // swap endianness of 2, 4 or 8 byte word in-place.
-static inline void swap_bytes_var(void *p, size_t num)
+static inline void swap_bytes_var(void* p, size_t num)
 {
 	switch (num) {
-		case sizeof(uint16_t): ; // empty statement to cheat the compiler
-							   uint16_t i16 = swap_bytes16(*((uint16_t *)p));
-							   memcpy(p, &i16, sizeof(uint16_t));
-							   return;
-		case sizeof(uint32_t): ;
-							   uint32_t i32 = swap_bytes32(*((uint32_t *)p));
-							   memcpy(p, &i32, sizeof(uint32_t));
-							   return;
-		case sizeof(uint64_t): ;
-							   uint64_t i64 = swap_bytes64(*((uint64_t *)p));
-							   memcpy(p, &i64, sizeof(uint64_t));
-							   return;
+	case sizeof(uint16_t):; // empty statement to cheat the compiler
+		uint16_t i16 = swap_bytes16(*((uint16_t*)p));
+		memcpy(p, &i16, sizeof(uint16_t));
+		return;
+	case sizeof(uint32_t):;
+		uint32_t i32 = swap_bytes32(*((uint32_t*)p));
+		memcpy(p, &i32, sizeof(uint32_t));
+		return;
+	case sizeof(uint64_t):;
+		uint64_t i64 = swap_bytes64(*((uint64_t*)p));
+		memcpy(p, &i64, sizeof(uint64_t));
+		return;
 	}
 	assert(false);
 	return;
 }
 
-static inline void fix_endianness(value_t *data_value, bool reverse_endianness)
+static inline void fix_endianness(value_t* data_value, bool reverse_endianness)
 {
 	if (!reverse_endianness) {
 		return;
 	}
 	if (data_value->flags & flags_64b) {
 		data_value->uint64_value = swap_bytes64(data_value->uint64_value);
-	} else if (data_value->flags & flags_32b) {
+	}
+	else if (data_value->flags & flags_32b) {
 		data_value->uint32_value = swap_bytes32(data_value->uint32_value);
-	} else if (data_value->flags & flags_16b) {
+	}
+	else if (data_value->flags & flags_16b) {
 		data_value->uint16_value = swap_bytes16(data_value->uint16_value);
 	}
 	return;

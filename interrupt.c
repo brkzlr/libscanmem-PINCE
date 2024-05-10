@@ -18,29 +18,29 @@
    */
 
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE    /* for sighandler_t */
+#define _GNU_SOURCE /* for sighandler_t */
 #endif
 
 #include <setjmp.h>
 #include <signal.h>
 
-#include "scanmem.h"
 #include "interrupt.h"
+#include "scanmem.h"
 
-sigjmp_buf jmpbuf;       /* used when aborting a command due to an interrupt */
-sighandler_t oldsig;     /* reinstalled before longjmp */
+sigjmp_buf jmpbuf; /* used when aborting a command due to an interrupt */
+sighandler_t oldsig; /* reinstalled before longjmp */
 unsigned intr_used;
 
 /* signal handler used to handle an interrupt during commands */
 void interrupted(int n)
 {
-	(void) n;
+	(void)n;
 	siglongjmp(jmpbuf, 1);
 }
 
 /* signal handler used to handle an interrupt during scans */
 void interrupt_scan(int n)
 {
-	(void) n;
+	(void)n;
 	sm_set_stop_flag(true);
 }
