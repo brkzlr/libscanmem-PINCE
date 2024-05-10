@@ -35,7 +35,6 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <limits.h> /* to determine the word width */
-#include <setjmp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +46,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "commands.h"
 #include "common.h"
 #include "endianness.h"
 #include "handlers.h"

@@ -27,7 +27,6 @@
 #endif
 
 #include <assert.h>
-#include <ctype.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -36,7 +35,6 @@
 #include <strings.h>
 
 #include "commands.h"
-#include "common.h"
 #include "show_message.h"
 
 static void free_completions(list_t* list)
