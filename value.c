@@ -26,7 +26,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h> /* for fixed-width formatters */
-#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

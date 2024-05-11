@@ -23,8 +23,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include "config.h"
-
 #include <fcntl.h>
 #include <signal.h>
 #include <stdarg.h>

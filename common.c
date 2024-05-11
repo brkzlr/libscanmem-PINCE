@@ -25,6 +25,7 @@
 #include <sys/types.h>
 
 #include "common.h"
+#include "scanmem.h"
 
 /* states returned by check_process() */
 enum pstate {

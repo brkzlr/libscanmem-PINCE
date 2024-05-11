@@ -23,8 +23,6 @@
    along with this library.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "config.h"
-
 /* for pread */
 #ifdef _XOPEN_SOURCE
 #undef _XOPEN_SOURCE
@@ -33,7 +31,6 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -562,7 +559,6 @@ bool sm_searchregions(globals_t* vars, scan_match_type_t match_type, const userv
 /* Needs to support only ANYNUMBER types */
 bool sm_setaddr(pid_t target, void* addr, const value_t* to)
 {
-	unsigned int i;
 	uint8_t memarray[sizeof(uint64_t)] = { 0 };
 	size_t memlength;
 
@@ -610,9 +606,6 @@ bool sm_read_array(pid_t target, const void* addr, void* buf, size_t len)
 
 bool sm_write_array(pid_t target, void* addr, const void* data, size_t len)
 {
-	unsigned int i, j;
-	long peek_value;
-
 	if (sm_attach(target) == false) {
 		return false;
 	}

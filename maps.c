@@ -22,10 +22,6 @@
    along with this library.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>

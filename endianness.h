@@ -23,8 +23,6 @@
 #ifndef ENDIANNESS_H
 #define ENDIANNESS_H
 
-#include "config.h"
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

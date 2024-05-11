@@ -26,8 +26,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include "config.h"
-
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
@@ -50,7 +48,6 @@
 #include "endianness.h"
 #include "handlers.h"
 #include "interrupt.h"
-#include "scanmem.h"
 #include "scanroutines.h"
 #include "sets.h"
 #include "show_message.h"

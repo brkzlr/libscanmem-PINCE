@@ -1,31 +1,11 @@
-# Compiled program
-/scanmem
+# Ignore all hidden files except a couple
+.*
+!.gitignore
+!.clang-format
 
-# Auto-generated files
-*.o
-*.lo
-*.la
-.deps
-.libs
-m4
-autom4te.cache
-config.h*
-configure
-Makefile
-Makefile.in
-aclocal.m4
-compile
-config.guess
-config.log
-config.status
-config.sub
-depcomp
-install-sh
-libtool
-ltmain.sh
-missing
-py-compile
-stamp-h1
-tags
-test-driver
+# Ignore CMake build junk but not CMakeLists
+*[Mm]ake*
+!CMakeLists.txt
 
+compile_commands.json
+libscanmem.so

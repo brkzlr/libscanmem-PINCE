@@ -20,25 +20,23 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE /* for sighandler_t */
-#endif
-
 #include <setjmp.h>
 #include <signal.h>
 
-extern sigjmp_buf jmpbuf; /* used when aborting a command due to an interrupt */
-extern sighandler_t oldsig; /* reinstalled before longjmp */
-extern unsigned intr_used;
+extern sigjmp_buf jmpBuf; /* used when aborting a command due to an interrupt */
+extern struct sigaction oldSigHandler; /* reinstalled before longjmp */
+extern unsigned intrUsed;
 
 /* signal handler used to handle an interrupt during commands */
+extern struct sigaction intrSigHandler;
 void interrupted(int);
 
 /* signal handler used to handle an interrupt during scans */
+extern struct sigaction intrScanSigHandler;
 void interrupt_scan(int);
 
-#define INTERRUPTABLE() ((oldsig = signal(SIGINT, interrupted)), intr_used = 1, sigsetjmp(jmpbuf, 1))
-#define INTERRUPTABLESCAN() ((oldsig = signal(SIGINT, interrupt_scan)), intr_used = 1)
-#define ENDINTERRUPTABLE() (intr_used ? ((void)signal(SIGINT, oldsig), intr_used = 0) : (intr_used = 0))
+#define INTERRUPTABLE() ((sigaction(SIGINT, &intrSigHandler, &oldSigHandler)), intrUsed = 1, sigsetjmp(jmpBuf, 1))
+#define INTERRUPTABLESCAN() ((sigaction(SIGINT, &intrScanSigHandler, &oldSigHandler)), intrUsed = 1)
+#define ENDINTERRUPTABLE() (intrUsed ? ((void)sigaction(SIGINT, &oldSigHandler, NULL), intrUsed = 0) : (intrUsed = 0))
 
 #endif /* INTERRUPT_H */
