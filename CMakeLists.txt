@@ -40,7 +40,7 @@ elseif(NOT EXISTS "/proc/self/mem")
 	message(FATAL_ERROR "This system does not seem to have /proc/pid/mem files.")
 endif()
 
-file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/*.c)
+file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/*.c)
 add_library(scanmem SHARED ${SOURCES})
 
 check_symbol_exists(secure_getenv "stdlib.h" HAVE_SECURE_GETENV)
