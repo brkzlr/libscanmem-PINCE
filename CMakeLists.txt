@@ -43,10 +43,12 @@ endif()
 file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/*.c)
 add_library(scanmem SHARED ${SOURCES})
 
+set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 check_symbol_exists(secure_getenv "stdlib.h" HAVE_SECURE_GETENV)
 if(HAVE_SECURE_GETENV)
 	target_compile_definitions(scanmem PRIVATE -DHAVE_SECURE_GETENV)
 endif()
+unset(CMAKE_REQUIRED_DEFINITIONS)
 
 test_big_endian(IS_BIG_ENDIAN)
 if(IS_BIG_ENDIAN)
