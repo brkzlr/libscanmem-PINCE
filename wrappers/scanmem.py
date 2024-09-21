@@ -1,6 +1,6 @@
 """
     scanmem.py: python wrapper for libscanmem
-    
+
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2018 Sebastian Parschauer <s.parschauer(a)gmx.de>
     Copyright (C) 2020 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
@@ -25,42 +25,56 @@ import re
 import sys
 import tempfile
 
-import misc
 
-class Scanmem():
+def decode(raw_bytes, errors="strict"):
+    return raw_bytes.decode(errors=errors)
+
+
+def encode(unicode_string, errors="strict"):
+    return unicode_string.encode(errors=errors)
+
+
+class Scanmem:
     """Wrapper for libscanmem."""
-    
+
     LIBRARY_FUNCS = {
-        'sm_init' : (ctypes.c_bool, ),
-        'sm_cleanup' : (None, ),
-        'sm_set_backend' : (None, ),
-        'sm_backend_exec_cmd' : (None, ctypes.c_char_p),
-        'sm_get_num_matches' : (ctypes.c_ulong, ),
-        'sm_get_version' : (ctypes.c_char_p, ),
-        'sm_get_scan_progress' : (ctypes.c_double, ),
-        'sm_set_stop_flag' : (None, ctypes.c_bool),
-        'sm_process_is_dead' : (ctypes.c_bool, ctypes.c_int32)
+        # General functions
+        "sm_init": (ctypes.c_bool,),
+        "sm_cleanup": (None,),
+        "sm_backend_exec_cmd": (None, ctypes.c_char_p),
+        "sm_get_num_matches": (ctypes.c_ulong,),
+        "sm_get_scan_progress": (ctypes.c_double,),
+        "sm_set_stop_flag": (None, ctypes.c_bool),
+        "sm_process_is_dead": (ctypes.c_bool, ctypes.c_int32),
+        # Commands
+        "sm_cmd_pid": (ctypes.c_bool, ctypes.c_uint32),
+        "sm_cmd_reset": (ctypes.c_bool,),
+        "sm_cmd_undo": (ctypes.c_bool,),
     }
 
-    def __init__(self, libpath='libscanmem.so'):
-        self._lib = ctypes.CDLL(libpath)
-        self._init_lib_functions()
-        self._lib.sm_set_backend()
-        self._lib.sm_init()
-        self.send_command('reset')
-        self.version = misc.decode(self._lib.sm_get_version())
-
     def _init_lib_functions(self):
-        for k,v in Scanmem.LIBRARY_FUNCS.items():
+        for k, v in Scanmem.LIBRARY_FUNCS.items():
             f = getattr(self._lib, k)
             f.restype = v[0]
             f.argtypes = v[1:]
 
-    def send_command(self, cmd, get_output = False):
+    def __init__(self, libpath="libscanmem.so"):
+        self._lib = ctypes.CDLL(libpath)
+        self._init_lib_functions()
+        self._lib.sm_init()
+        self._lib.sm_cmd_reset()
+
+    def exit_cleanup(self):
+        """
+        Frees resources allocated by libscanmem, should be called before disposing of this instance
+        """
+        self._lib.sm_cleanup()
+
+    def send_command(self, cmd, get_output=False):
         """
         Execute command using libscanmem.
         This function is NOT thread safe, send only one command at a time.
-        
+
         cmd: command to run
         get_output: if True, return in a string what libscanmem would print to stdout
         """
@@ -69,14 +83,14 @@ class Scanmem():
                 backup_stdout_fileno = os.dup(sys.stdout.fileno())
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
-                self._lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
+                self._lib.sm_backend_exec_cmd(ctypes.c_char_p(encode(cmd)))
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
                 directed_file.seek(0)
                 return directed_file.read()
         else:
-            self._lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
+            self._lib.sm_backend_exec_cmd(ctypes.c_char_p(encode(cmd)))
 
     def get_match_count(self):
         return self._lib.sm_get_num_matches()
@@ -90,24 +104,28 @@ class Scanmem():
         """
         self._lib.sm_set_stop_flag(stop_flag)
 
-    def exit_cleanup(self):
-        """
-        Frees resources allocated by libscanmem, should be called before disposing of this instance
-        """
-        self._lib.sm_cleanup()
-
     def process_is_dead(self, pid):
         return self._lib.sm_process_is_dead(pid)
-    
+
+    def pid(self, pid=0):
+        return self._lib.sm_cmd_pid(pid)
+
+    def reset(self):
+        return self._lib.sm_cmd_reset()
+
+    def undo_scan(self):
+        return self._lib.sm_cmd_undo()
+
     def matches(self):
         """
         Returns a generator of (match_id_str, addr_str, off_str, region_type, value, types_str) for each match, all strings.
         The function executes commands internally, it is NOT thread safe
         """
-        list_bytes = self.send_command('list', get_output=True)
-        lines = filter(None, misc.decode(list_bytes).split('\n'))
-        
-        line_regex = re.compile(r'^\[ *(\d+)\] +([\da-f]+), +\d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$')
+        list_bytes = self.send_command("list", get_output=True)
+        lines = filter(None, decode(list_bytes).split("\n"))
+
+        line_regex = re.compile(
+            r"^\[ *(\d+)\] +([\da-f]+), +\d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$"
+        )
         for line in lines:
             yield line_regex.match(line).groups()
-        
