@@ -31,7 +31,7 @@
 #include "value.h"
 
 /* true if host is big endian */
-#ifdef WORDS_BIGENDIAN
+#ifdef IS_BIG_ENDIAN
 static const bool big_endian = true;
 #else
 static const bool big_endian = false;
