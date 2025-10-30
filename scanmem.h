@@ -42,7 +42,7 @@ typedef struct {
 	pid_t target;
 	matches_and_old_values_array* matches; /* current matches */
 	unsigned long num_matches;
-	struct undo_entry_t* undo_entry;
+	FILE* undo_file;
 	double scan_progress;
 	volatile bool stop_flag;
 	list_t* regions;

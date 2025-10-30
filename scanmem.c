@@ -184,11 +184,10 @@ void sm_cleanup(void)
 	if (sm_globals.matches)
 		free(sm_globals.matches);
 
-	/* free undo entry */
-	if (sm_globals.undo_entry) {
-		free(sm_globals.undo_entry->matches);
-		free(sm_globals.undo_entry);
-		sm_globals.undo_entry = NULL;
+	/* close undo file*/
+	if (sm_globals.undo_file) {
+		fclose(sm_globals.undo_file);
+		sm_globals.undo_file = NULL;
 	}
 
 	/* attempt to detach just in case */
@@ -267,11 +266,9 @@ bool sm_cmd_reset(void)
 		return false;
 	}
 
-	/* reset undo entry */
-	if (sm_globals.undo_entry) {
-		free(sm_globals.undo_entry->matches);
-		free(sm_globals.undo_entry);
-		sm_globals.undo_entry = NULL;
+	/* prevent undo with old data that we don't care about*/
+	if (sm_globals.undo_file) {
+		fseek(sm_globals.undo_file, 0, SEEK_END);
 	}
 
 	return true;
@@ -279,32 +276,38 @@ bool sm_cmd_reset(void)
 
 bool sm_cmd_undo(void)
 {
-	if (sm_globals.undo_entry == NULL) {
+	if (sm_globals.undo_file == NULL) {
+		show_error("undo file doesn't exist!\n");
+		return false;
+	}
+
+	if (ftell(sm_globals.undo_file) != 0) {
 		show_info("nothing to undo\n");
 		return true;
 	}
 
-	struct undo_entry_t* undo_entry_ptr = sm_globals.undo_entry;
-	matches_and_old_values_array* tmp = realloc(sm_globals.matches, undo_entry_ptr->matches->bytes_allocated);
+	unsigned long num_matches;
+	fread(&num_matches, sizeof(sm_globals.num_matches), 1, sm_globals.undo_file);
+
+	size_t bytes_alloc, max_bytes;
+	fread(&bytes_alloc, sizeof(sm_globals.matches->bytes_allocated), 1, sm_globals.undo_file);
+	fread(&max_bytes, sizeof(sm_globals.matches->max_needed_bytes), 1, sm_globals.undo_file);
+
+	matches_and_old_values_array* tmp = realloc(sm_globals.matches, bytes_alloc);
 	if (tmp != NULL) {
 		sm_globals.matches = tmp;
 	}
 	else {
-		show_error("could not allocate memory\n");
+		show_error("could not re-allocate memory for undo'd matches\n");
 		return false;
 	}
-	/* copy since the array would be resized by null_terminate which would
-	 * cause use after free at some point */
-	memcpy(sm_globals.matches, undo_entry_ptr->matches, undo_entry_ptr->matches->bytes_allocated);
-	sm_globals.num_matches = undo_entry_ptr->num_matches;
 
-	/* Ideally we should leave those alone and just realloc on the next scan
-	 * but due to the possibility of not searching anymore after undo
-	 * we should just free them to be on the safe side.
-	 * Performance will be monitored after change to ensure it's not too affected. */
-	free(sm_globals.undo_entry->matches);
-	free(sm_globals.undo_entry);
-	sm_globals.undo_entry = NULL;
+	sm_globals.num_matches = num_matches;
+	sm_globals.matches->bytes_allocated = bytes_alloc;
+	sm_globals.matches->max_needed_bytes = max_bytes;
+
+	const size_t remaining_bytes = bytes_alloc - sizeof(bytes_alloc) - sizeof(max_bytes);
+	fread(sm_globals.matches->swaths, remaining_bytes, 1, sm_globals.undo_file);
 
 	return true;
 }

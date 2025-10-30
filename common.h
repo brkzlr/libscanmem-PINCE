@@ -41,6 +41,6 @@
 
 /* Function declarations */
 bool sm_process_is_dead(pid_t pid);
-bool sm_add_current_match_as_undo_entry();
+bool sm_add_current_match_to_undo_file();
 
 #endif /* COMMON_H */

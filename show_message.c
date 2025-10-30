@@ -29,7 +29,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "common.h"
 #include "scanmem.h"
 #include "show_message.h"
 

@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "scanmem.h"
+#include "show_message.h"
 
 /* states returned by check_process() */
 enum pstate {
@@ -94,30 +95,26 @@ bool sm_process_is_dead(pid_t pid)
 	return (check_process(pid) != PROC_RUNNING);
 }
 
-bool sm_add_current_match_as_undo_entry()
+bool sm_add_current_match_to_undo_file()
 {
-	matches_and_old_values_array* matches = sm_globals.matches;
-	matches_and_old_values_array* match_copy = malloc(matches->bytes_allocated);
-
-	if (match_copy != NULL) {
-		memcpy(match_copy, matches, matches->bytes_allocated);
-
-		if (sm_globals.undo_entry == NULL) {
-			struct undo_entry_t* entry = malloc(sizeof(struct undo_entry_t));
-			entry->num_matches = sm_globals.num_matches;
-			entry->matches = match_copy;
-
-			sm_globals.undo_entry = entry;
+	if (sm_globals.undo_file == NULL) {
+		sm_globals.undo_file = tmpfile();
+		if (sm_globals.undo_file == NULL) {
+			show_error("error creating tmpfile for undo!\n");
+			return false;
 		}
-		else {
-			free(sm_globals.undo_entry->matches);
-			sm_globals.undo_entry->num_matches = sm_globals.num_matches;
-			sm_globals.undo_entry->matches = match_copy;
-		}
-
-		return true;
+	}
+	else {
+		fseek(sm_globals.undo_file, 0, SEEK_SET);
 	}
 
-	show_error("failed to allocate memory for undo_entry!\n");
-	return false;
+	fwrite(&sm_globals.num_matches, sizeof(sm_globals.num_matches), 1, sm_globals.undo_file);
+	fwrite(&sm_globals.matches->bytes_allocated, sizeof(sm_globals.matches->bytes_allocated), 1, sm_globals.undo_file);
+	fwrite(&sm_globals.matches->max_needed_bytes, sizeof(sm_globals.matches->max_needed_bytes), 1, sm_globals.undo_file);
+
+	const size_t remaining_bytes = sm_globals.matches->bytes_allocated - sizeof(sm_globals.matches->bytes_allocated) - sizeof(sm_globals.matches->max_needed_bytes);
+	fwrite(sm_globals.matches->swaths, remaining_bytes, 1, sm_globals.undo_file);
+
+	fseek(sm_globals.undo_file, 0, SEEK_SET);
+	return true;
 }

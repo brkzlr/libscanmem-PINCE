@@ -67,11 +67,6 @@ typedef struct {
 	size_t index;
 } match_location;
 
-struct undo_entry_t {
-	unsigned long num_matches;
-	matches_and_old_values_array* matches;
-};
-
 /* Public functions */
 
 matches_and_old_values_array* allocate_array(matches_and_old_values_array* array,

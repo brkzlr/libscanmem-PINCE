@@ -683,7 +683,7 @@ bool handler__operators(globals_t* vars, char** argv, unsigned argc)
 			return false;
 		}
 
-		sm_add_current_match_as_undo_entry();
+		sm_add_current_match_to_undo_file();
 		if (sm_checkmatches(vars, m, &val) == false) {
 			show_error("failed to search target address space.\n");
 			return false;
@@ -768,7 +768,7 @@ bool handler__string(globals_t* vars, char** argv, unsigned argc)
 		}
 
 		/* already know some matches */
-		sm_add_current_match_as_undo_entry();
+		sm_add_current_match_to_undo_file();
 		if (sm_checkmatches(vars, MATCHEQUALTO, &val) != true) {
 			show_error("failed to search target address space.\n");
 			goto fail;
@@ -889,7 +889,7 @@ bool handler__default(globals_t* vars, char** argv, unsigned argc)
 		}
 
 		/* already know some matches */
-		sm_add_current_match_as_undo_entry();
+		sm_add_current_match_to_undo_file();
 		if (sm_checkmatches(vars, m, val) != true) {
 			show_error("failed to search target address space.\n");
 			goto retl;
