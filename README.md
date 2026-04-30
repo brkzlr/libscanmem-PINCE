@@ -1,3 +1,6 @@
+# Moved to Zig rewrite [here](https://github.com/brkzlr/libmemscan/tree/master)
+## No longer maintained
+
 # libscanmem-PINCE
 This is a fork of [scanmem](https://github.com/scanmem/scanmem) mainly for stripping anything that's not library focused (***libscanmem***) and add features that are needed by [PINCE](https://github.com/korcankaraokcu/PINCE).
 
